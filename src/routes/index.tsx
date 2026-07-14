@@ -217,30 +217,136 @@ function AboutTab() {
 }
 
 /* ─── Home tab ──────────────────────────────────────────────────── */
-function HomeTab({ setTab }: { setTab: (t: TabId) => void }) {
+const WHATS_ON_CARDS = [
+  { id: 'newsletter' as const, label: 'Newsletters', tag: 'BULLETIN' },
+  { id: 'breaking' as const, label: 'Breaking News', tag: 'ALERT' },
+  { id: 'foreign' as const, label: 'Foreign / Intl', tag: 'DISPATCH' },
+]
+
+function CardThumb({ image_url, accent }: { image_url?: string | null; accent: string }) {
+  if (image_url) return <img src={image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
   return (
-    <div>
-      <div style={{
-        position: 'relative', borderRadius: 14, padding: '40px 32px', marginBottom: 28, overflow: 'hidden',
-        background: `linear-gradient(135deg, ${C.navyDark} 0%, ${C.navy} 50%, ${C.navyLight} 100%)`,
-      }}>
-        <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
-        <div style={{ position: 'absolute', bottom: -80, left: -40, width: 260, height: 260, borderRadius: '50%', background: 'rgba(197,48,48,0.10)' }} />
-        <div style={{
-          position: 'relative', background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-          border: '1px solid rgba(255,255,255,0.14)', borderRadius: 10, padding: '24px 28px', maxWidth: 560,
-        }}>
-          <div style={{ fontSize: 11, letterSpacing: 2, color: 'rgba(215,224,242,0.85)', marginBottom: 8 }}>OSFUSA CABLE-SATELLITE PUBLIC AFFAIRS NETWORK</div>
-          <div style={{ fontSize: 30, fontWeight: 700, fontFamily: 'Georgia, serif', marginBottom: 10, color: C.white }}>Coverage you can trust</div>
-          <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', marginBottom: 20 }}>Breaking news, foreign affairs, and official newsletters - plus live coverage.</div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button onClick={() => setTab('breaking')} style={{ background: C.red, color: C.white, border: 'none', borderRadius: 20, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', boxShadow: '0 2px 10px rgba(197,48,48,0.35)' }}>Breaking News</button>
-            <button onClick={() => setTab('livestream')} style={{ background: 'rgba(255,255,255,0.12)', color: C.white, border: `1px solid rgba(255,255,255,0.35)`, borderRadius: 20, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Watch Live</button>
-          </div>
-        </div>
+    <div style={{ width: '100%', height: '100%', background: `linear-gradient(135deg, ${accent}, ${C.navyDark})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 26, height: 26, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.6)' }} />
+    </div>
+  )
+}
+
+function WhatsOnCard({ label, tag, setTab }: { label: string; tag: string; id: TabId; setTab: (t: TabId) => void }) {
+  const [latest, setLatest] = useState<Post | null>(null)
+  useEffect(() => {
+    supabase.from('posts').select('*').eq('category', label === 'Newsletters' ? 'newsletter' : label === 'Breaking News' ? 'breaking' : 'foreign')
+      .order('created_at', { ascending: false }).limit(1).then(({ data }) => setLatest(data?.[0] || null))
+  }, [])
+  const accent = label === 'Breaking News' ? C.red : label === 'Foreign / Intl' ? C.green : C.navy
+  const tabId: TabId = label === 'Newsletters' ? 'newsletter' : label === 'Breaking News' ? 'breaking' : 'foreign'
+  return (
+    <button onClick={() => setTab(tabId)} style={{ textAlign: 'left', background: C.white, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10, boxShadow: '0 2px 8px rgba(18,58,122,0.05)' }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: accent, letterSpacing: 1 }}>{tag}</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: C.darkGray, lineHeight: 1.3, minHeight: 36 }}>{latest ? latest.title : label}</div>
+      <div style={{ width: '100%', height: 80, borderRadius: 6, overflow: 'hidden' }}><CardThumb image_url={latest?.image_url} accent={accent} /></div>
+      <div style={{ fontSize: 11, color: accent, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>{latest ? new Date(latest.created_at).toLocaleDateString() : 'No posts yet'}</div>
+    </button>
+  )
+}
+
+function LiveStreamCard({ setTab }: { setTab: (t: TabId) => void }) {
+  const [live, setLive] = useState(false)
+  useEffect(() => {
+    supabase.from('settings').select('*').eq('key', 'livestream_status').single().then(({ data }) => setLive(data?.value === 'live'))
+  }, [])
+  return (
+    <button onClick={() => setTab('livestream')} style={{ textAlign: 'left', background: C.white, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10, boxShadow: '0 2px 8px rgba(18,58,122,0.05)' }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: C.navy, letterSpacing: 1 }}>BROADCAST</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: C.darkGray, lineHeight: 1.3, minHeight: 36 }}>Live Stream</div>
+      <div style={{ width: '100%', height: 80, borderRadius: 6, overflow: 'hidden', background: `linear-gradient(135deg, ${C.navy}, ${C.navyDark})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 0, height: 0, borderTop: '9px solid transparent', borderBottom: '9px solid transparent', borderLeft: '14px solid rgba(255,255,255,0.85)' }} />
       </div>
-      <h3 style={{ fontSize: 15, fontWeight: 700, color: C.darkGray, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 }}>Latest breaking</h3>
-      <PostFeed category="breaking" accent={C.red} />
+      <div style={{ fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5, color: live ? C.red : C.gray }}>
+        <span style={{ width: 7, height: 7, borderRadius: '50%', background: live ? C.red : C.gray }} /> {live ? 'LIVE NOW' : 'Offline'}
+      </div>
+    </button>
+  )
+}
+
+function RecentRow() {
+  const [posts, setPosts] = useState<Post[]>([])
+  useEffect(() => {
+    supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(6).then(({ data }) => setPosts(data || []))
+  }, [])
+  if (posts.length === 0) return null
+  const accentFor = (cat: string) => cat === 'breaking' ? C.red : cat === 'foreign' ? C.green : C.navy
+  return (
+    <div style={{ marginTop: 36 }}>
+      <h3 style={{ fontSize: 13, fontWeight: 700, color: C.darkGray, marginBottom: 14, textTransform: 'uppercase', letterSpacing: 1 }}>Recently posted</h3>
+      <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 6 }}>
+        {posts.map(p => (
+          <div key={p.id} style={{ minWidth: 200, maxWidth: 200, flexShrink: 0 }}>
+            <div style={{ position: 'relative', width: '100%', height: 110, borderRadius: 8, overflow: 'hidden', marginBottom: 8, boxShadow: '0 2px 8px rgba(18,58,122,0.08)' }}>
+              <CardThumb image_url={p.image_url} accent={accentFor(p.category)} />
+              <div style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(0,0,0,0.55)', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 20, textTransform: 'uppercase' }}>{p.category}</div>
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.darkGray, lineHeight: 1.35 }}>{p.title}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function HomeTab({ setTab }: { setTab: (t: TabId) => void }) {
+  const [featured, setFeatured] = useState<Post | null>(null)
+  const [live, setLive] = useState(false)
+
+  useEffect(() => {
+    supabase.from('posts').select('*').order('pinned', { ascending: false }).order('created_at', { ascending: false }).limit(1).then(({ data }) => setFeatured(data?.[0] || null))
+    supabase.from('settings').select('*').eq('key', 'livestream_status').single().then(({ data }) => setLive(data?.value === 'live'))
+  }, [])
+
+  const accent = featured ? (featured.category === 'breaking' ? C.red : featured.category === 'foreign' ? C.green : C.navy) : C.navy
+
+  return (
+    <div style={{ background: `linear-gradient(135deg, #ffffff 0%, #eef2fb 45%, #dbe6f7 100%)`, margin: '-28px -24px 0', padding: '28px 24px 36px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        {/* Featured hero */}
+        <div style={{ display: 'grid', gridTemplateColumns: featured?.image_url ? '1fr 1fr' : '1fr', gap: 28, alignItems: 'center', marginBottom: 34 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: accent, letterSpacing: 2, marginBottom: 8 }}>{featured ? 'FEATURED' : 'OSFUSA CABLE-SATELLITE PUBLIC AFFAIRS NETWORK'}</div>
+            <div style={{ fontSize: 34, fontWeight: 700, color: C.navyDark, fontFamily: 'Georgia, serif', lineHeight: 1.15, marginBottom: 14 }}>
+              {featured ? featured.title : 'Coverage you can trust'}
+            </div>
+            <div style={{ fontSize: 14, color: C.textMuted, lineHeight: 1.6, marginBottom: 20 }}>
+              {featured ? featured.body.slice(0, 140) + (featured.body.length > 140 ? '...' : '') : 'Breaking news, foreign affairs, and official newsletters - plus live coverage.'}
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+              <button onClick={() => setTab('livestream')} style={{ display: 'flex', alignItems: 'center', gap: 8, background: C.navy, color: C.white, border: 'none', borderRadius: 6, padding: '11px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                <span style={{ width: 0, height: 0, borderTop: '5px solid transparent', borderBottom: '5px solid transparent', borderLeft: '8px solid #fff' }} /> {live ? 'Watch Live' : 'Live Stream'}
+              </button>
+              <button onClick={() => setTab(featured ? (featured.category as TabId) : 'breaking')} style={{ background: 'transparent', border: 'none', color: C.navy, fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                View all →
+              </button>
+            </div>
+          </div>
+          {featured?.image_url && (
+            <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', height: 260, boxShadow: '0 8px 30px rgba(18,58,122,0.18)' }}>
+              <img src={featured.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(11,47,107,0.85))', padding: '30px 18px 14px' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#fff', letterSpacing: 1, textTransform: 'uppercase', opacity: 0.85 }}>{featured.category}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>{featured.title}</div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* What's on */}
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: C.darkGray, marginBottom: 14, textTransform: 'uppercase', letterSpacing: 1 }}>What's on C-SPAN</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+          {WHATS_ON_CARDS.map(c => <WhatsOnCard key={c.id} id={c.id} label={c.label} tag={c.tag} setTab={setTab} />)}
+          <LiveStreamCard setTab={setTab} />
+        </div>
+
+        <RecentRow />
+      </div>
     </div>
   )
 }

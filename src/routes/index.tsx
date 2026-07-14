@@ -10,6 +10,7 @@ const TABS = [
   { id: 'breaking',    label: 'Breaking News' },
   { id: 'foreign',     label: 'Foreign / Intl' },
   { id: 'livestream',  label: 'Live Stream' },
+  { id: 'careers',     label: 'Careers' },
   { id: 'about',       label: 'About' },
 ] as const
 
@@ -52,29 +53,24 @@ function Header({ tab, setTab }: { tab: TabId; setTab: (t: TabId) => void }) {
   return (
     <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
       <TickerBar />
-      <header style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', borderBottom: `1px solid ${C.border}`, boxShadow: '0 2px 10px rgba(18,58,122,0.06)' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${C.navy}`, flexShrink: 0 }}>
+      <header style={{ background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', borderBottom: `1px solid ${C.border}`, boxShadow: '0 2px 10px rgba(18,58,122,0.06)' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${C.navy}`, flexShrink: 0 }}>
               <img src="/cspan-emblem.png" alt="C-SPAN" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none' }} />
             </div>
-            <div>
-              <div style={{ fontSize: 9, letterSpacing: 3, color: C.gray, textTransform: 'uppercase' }}>OSFUSA ROBLOX RP</div>
-              <Link to="/" style={{ fontSize: 21, fontWeight: 700, color: C.navy, fontFamily: 'Georgia, serif', textDecoration: 'none', letterSpacing: 0.3 }}>C-SPAN</Link>
-            </div>
+            <Link to="/" style={{ fontSize: 19, fontWeight: 700, color: C.navy, fontFamily: 'Georgia, serif', textDecoration: 'none', letterSpacing: 0.3 }}>C-SPAN</Link>
           </div>
-          <Link to="/apply" style={{ background: C.red, color: C.white, padding: '9px 20px', borderRadius: 4, fontSize: 13, fontWeight: 700, textDecoration: 'none', boxShadow: '0 2px 8px rgba(197,48,48,0.3)' }}>Apply</Link>
-        </div>
-        <div style={{ background: C.lightGray, borderTop: `1px solid ${C.border}` }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px', display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          <nav style={{ display: 'flex', gap: 2, flexWrap: 'wrap', flex: 1, justifyContent: 'center' }}>
             {TABS.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{
                 background: 'transparent', border: 'none', borderBottom: tab === t.id ? `2px solid ${C.navy}` : '2px solid transparent',
-                color: tab === t.id ? C.navy : C.textMuted, padding: '10px 12px', fontSize: 13, cursor: 'pointer',
-                fontWeight: tab === t.id ? 700 : 500,
+                color: tab === t.id ? C.navy : C.textMuted, padding: '8px 10px', fontSize: 13, cursor: 'pointer',
+                fontWeight: tab === t.id ? 700 : 500, whiteSpace: 'nowrap',
               }}>{t.label}</button>
             ))}
-          </div>
+          </nav>
+          <Link to="/apply" style={{ background: C.red, color: C.white, padding: '8px 18px', borderRadius: 4, fontSize: 13, fontWeight: 700, textDecoration: 'none', flexShrink: 0, boxShadow: '0 2px 8px rgba(197,48,48,0.3)' }}>Apply</Link>
         </div>
       </header>
     </div>
@@ -194,6 +190,53 @@ function LiveStreamTab() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/* ─── Careers tab ───────────────────────────────────────────────── */
+function CareersTab() {
+  const [positions, setPositions] = useState<{ title: string; desc: string }[]>([])
+  useEffect(() => {
+    supabase.from('settings').select('*').eq('key', 'open_positions').single().then(({ data }) => {
+      const raw = data?.value || ''
+      const list = raw.split('\n').map((l: string) => l.trim()).filter(Boolean).map((l: string) => {
+        const [title, ...rest] = l.split('|')
+        return { title: title.trim(), desc: rest.join('|').trim() }
+      })
+      setPositions(list)
+    })
+  }, [])
+
+  return (
+    <div>
+      <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, padding: 28, marginBottom: 20 }}>
+        <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 22, color: C.navy, marginBottom: 8 }}>Careers at C-SPAN</h2>
+        <p style={{ fontSize: 14, color: C.textMuted, lineHeight: 1.7 }}>
+          Interested in joining the network? Check the open positions below, then head to
+          the Apply tab to submit an application.
+        </p>
+      </div>
+
+      {positions.length === 0 ? (
+        <div style={{ padding: 30, textAlign: 'center', color: C.gray, background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, marginBottom: 20 }}>
+          No open positions listed right now.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+          {positions.map((p, i) => (
+            <div key={i} style={{ background: C.white, border: `1px solid ${C.border}`, borderLeft: `4px solid ${C.navy}`, borderRadius: 6, padding: '16px 20px' }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 4 }}>{p.title}</div>
+              {p.desc && <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.6 }}>{p.desc}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <Link to="/apply" style={{ background: C.navy, color: C.white, padding: '10px 20px', borderRadius: 4, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>Apply Now</Link>
+        <Link to="/applications" style={{ background: C.white, color: C.navy, border: `1px solid ${C.border}`, padding: '10px 20px', borderRadius: 4, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>Check Application Status</Link>
+      </div>
     </div>
   )
 }
@@ -409,6 +452,7 @@ function CSPANHome() {
         {tab === 'breaking' && <PostFeed category="breaking" accent={C.red} />}
         {tab === 'foreign' && <PostFeed category="foreign" accent={C.green} />}
         {tab === 'livestream' && <LiveStreamTab />}
+        {tab === 'careers' && <CareersTab />}
         {tab === 'about' && <AboutTab />}
       </main>
       <SiteFooter />

@@ -98,6 +98,7 @@ function SiteFooter() {
       )}
       <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.12)' }}>
         <Link to="/admin" style={{ color: 'rgba(215,224,242,0.6)', fontSize: 11, textDecoration: 'none' }}>Staff Login</Link>
+        <div style={{ marginTop: 6, color: 'rgba(215,224,242,0.4)', fontSize: 10 }}>made by Greysphoric</div>
       </div>
     </footer>
   )
@@ -284,11 +285,11 @@ function WhatsOnCard({ label, tag, setTab }: { label: string; tag: string; id: T
   const accent = label === 'Breaking News' ? C.red : label === 'Foreign / Intl' ? C.green : C.navy
   const tabId: TabId = label === 'Newsletters' ? 'newsletter' : label === 'Breaking News' ? 'breaking' : 'foreign'
   return (
-    <button onClick={() => setTab(tabId)} style={{ textAlign: 'left', background: C.white, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10, boxShadow: '0 2px 8px rgba(18,58,122,0.05)' }}>
-      <div style={{ fontSize: 10, fontWeight: 700, color: accent, letterSpacing: 1 }}>{tag}</div>
-      <div style={{ fontSize: 14, fontWeight: 700, color: C.darkGray, lineHeight: 1.3, minHeight: 36 }}>{latest ? latest.title : label}</div>
-      <div style={{ width: '100%', height: 80, borderRadius: 6, overflow: 'hidden' }}><CardThumb image_url={latest?.image_url} accent={accent} /></div>
-      <div style={{ fontSize: 11, color: accent, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>{latest ? new Date(latest.created_at).toLocaleDateString() : 'No posts yet'}</div>
+    <button onClick={() => setTab(tabId)} style={{ textAlign: 'left', background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: '0 3px 12px rgba(18,58,122,0.07)' }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: accent, letterSpacing: 1.2 }}>{tag}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color: C.darkGray, lineHeight: 1.3, minHeight: 48 }}>{latest ? latest.title : label}</div>
+      <div style={{ width: '100%', height: 140, borderRadius: 8, overflow: 'hidden' }}><CardThumb image_url={latest?.image_url} accent={accent} /></div>
+      <div style={{ fontSize: 13, color: accent, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>{latest ? new Date(latest.created_at).toLocaleDateString() : 'No posts yet'}</div>
     </button>
   )
 }
@@ -299,14 +300,14 @@ function LiveStreamCard({ setTab }: { setTab: (t: TabId) => void }) {
     supabase.from('settings').select('*').eq('key', 'livestream_status').single().then(({ data }) => setLive(data?.value === 'live'))
   }, [])
   return (
-    <button onClick={() => setTab('livestream')} style={{ textAlign: 'left', background: C.white, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10, boxShadow: '0 2px 8px rgba(18,58,122,0.05)' }}>
-      <div style={{ fontSize: 10, fontWeight: 700, color: C.navy, letterSpacing: 1 }}>BROADCAST</div>
-      <div style={{ fontSize: 14, fontWeight: 700, color: C.darkGray, lineHeight: 1.3, minHeight: 36 }}>Live Stream</div>
-      <div style={{ width: '100%', height: 80, borderRadius: 6, overflow: 'hidden', background: `linear-gradient(135deg, ${C.navy}, ${C.navyDark})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: 0, height: 0, borderTop: '9px solid transparent', borderBottom: '9px solid transparent', borderLeft: '14px solid rgba(255,255,255,0.85)' }} />
+    <button onClick={() => setTab('livestream')} style={{ textAlign: 'left', background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: '0 3px 12px rgba(18,58,122,0.07)' }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, letterSpacing: 1.2 }}>BROADCAST</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color: C.darkGray, lineHeight: 1.3, minHeight: 48 }}>Live Stream</div>
+      <div style={{ width: '100%', height: 140, borderRadius: 8, overflow: 'hidden', background: `linear-gradient(135deg, ${C.navy}, ${C.navyDark})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 0, height: 0, borderTop: '14px solid transparent', borderBottom: '14px solid transparent', borderLeft: '22px solid rgba(255,255,255,0.85)' }} />
       </div>
-      <div style={{ fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5, color: live ? C.red : C.gray }}>
-        <span style={{ width: 7, height: 7, borderRadius: '50%', background: live ? C.red : C.gray }} /> {live ? 'LIVE NOW' : 'Offline'}
+      <div style={{ fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, color: live ? C.red : C.gray }}>
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: live ? C.red : C.gray }} /> {live ? 'LIVE NOW' : 'Offline'}
       </div>
     </button>
   )
@@ -383,7 +384,7 @@ function HomeTab({ setTab }: { setTab: (t: TabId) => void }) {
 
         {/* What's on */}
         <h3 style={{ fontSize: 13, fontWeight: 700, color: C.darkGray, marginBottom: 14, textTransform: 'uppercase', letterSpacing: 1 }}>What's on C-SPAN</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 16 }}>
           {WHATS_ON_CARDS.map(c => <WhatsOnCard key={c.id} id={c.id} label={c.label} tag={c.tag} setTab={setTab} />)}
           <LiveStreamCard setTab={setTab} />
         </div>
@@ -394,45 +395,30 @@ function HomeTab({ setTab }: { setTab: (t: TabId) => void }) {
   )
 }
 
-/* ─── Live popup ────────────────────────────────────────────────── */
-function LiveStreamPopup({ goLive }: { goLive: () => void }) {
-  const [status, setStatus] = useState<string | null>(null)
+/* ─── Live popup (upcoming schedule only - live goes straight to the tab) ── */
+function UpcomingStreamPopup() {
   const [next, setNext] = useState<any | null>(null)
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
     if (sessionStorage.getItem('cspan-live-popup-dismissed') === 'true') { setDismissed(true); return }
-    supabase.from('settings').select('*').eq('key', 'livestream_status').single().then(({ data }) => setStatus(data?.value || 'offline'))
     supabase.from('stream_schedule').select('*').gt('scheduled_at', new Date().toISOString()).order('scheduled_at', { ascending: true }).limit(1)
       .then(({ data }) => setNext(data?.[0] || null))
   }, [])
 
   const dismiss = () => { sessionStorage.setItem('cspan-live-popup-dismissed', 'true'); setDismissed(true) }
 
-  if (dismissed || (status !== 'live' && !next)) return null
+  if (dismissed || !next) return null
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(11,47,107,0.45)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 20 }}>
       <div style={{ background: C.white, borderRadius: 12, padding: 28, maxWidth: 400, width: '100%', boxShadow: '0 12px 40px rgba(0,0,0,0.3)', position: 'relative' }}>
         <button onClick={dismiss} style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', fontSize: 18, color: C.gray, cursor: 'pointer' }}>✕</button>
-        {status === 'live' ? (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: C.red }} />
-              <span style={{ fontSize: 12, fontWeight: 700, color: C.red, textTransform: 'uppercase', letterSpacing: 1 }}>Live now</span>
-            </div>
-            <div style={{ fontSize: 19, fontWeight: 700, color: C.navy, fontFamily: 'Georgia, serif', marginBottom: 14 }}>C-SPAN is broadcasting live</div>
-            <button onClick={() => { goLive(); dismiss() }} style={{ background: C.red, color: C.white, border: 'none', borderRadius: 20, padding: '10px 22px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Watch now</button>
-          </>
-        ) : (
-          <>
-            <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Upcoming stream</div>
-            <div style={{ fontSize: 19, fontWeight: 700, color: C.navy, fontFamily: 'Georgia, serif', marginBottom: 4 }}>{next.title}</div>
-            <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 14 }}>{new Date(next.scheduled_at).toLocaleString()}</div>
-            {next.notes && <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 14 }}>{next.notes}</div>}
-            <button onClick={dismiss} style={{ background: C.navy, color: C.white, border: 'none', borderRadius: 20, padding: '10px 22px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Got it</button>
-          </>
-        )}
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Upcoming stream</div>
+        <div style={{ fontSize: 19, fontWeight: 700, color: C.navy, fontFamily: 'Georgia, serif', marginBottom: 4 }}>{next.title}</div>
+        <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 14 }}>{new Date(next.scheduled_at).toLocaleString()}</div>
+        {next.notes && <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 14 }}>{next.notes}</div>}
+        <button onClick={dismiss} style={{ background: C.navy, color: C.white, border: 'none', borderRadius: 20, padding: '10px 22px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Got it</button>
       </div>
     </div>
   )
@@ -442,9 +428,19 @@ function LiveStreamPopup({ goLive }: { goLive: () => void }) {
 function CSPANHome() {
   const [tab, setTab] = useState<TabId>('home')
 
+  useEffect(() => {
+    if (sessionStorage.getItem('cspan-auto-live-jumped') === 'true') return
+    supabase.from('settings').select('*').eq('key', 'livestream_status').single().then(({ data }) => {
+      if (data?.value === 'live') {
+        sessionStorage.setItem('cspan-auto-live-jumped', 'true')
+        setTab('livestream')
+      }
+    })
+  }, [])
+
   return (
     <div style={{ minHeight: '100vh', background: C.offWhite, fontFamily: 'system-ui, sans-serif' }}>
-      <LiveStreamPopup goLive={() => setTab('livestream')} />
+      <UpcomingStreamPopup />
       <Header tab={tab} setTab={setTab} />
       <main style={{ maxWidth: 900, margin: '0 auto', padding: '28px 24px' }}>
         {tab === 'home' && <HomeTab setTab={setTab} />}

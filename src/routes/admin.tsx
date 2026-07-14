@@ -158,6 +158,12 @@ function LivestreamTab() {
   const [url, setUrl] = useState('')
   const [status, setStatus] = useState('offline')
   const [saved, setSaved] = useState(false)
+  const [schedule, setSchedule] = useState<any[]>([])
+  const [newTitle, setNewTitle] = useState('')
+  const [newTime, setNewTime] = useState('')
+  const [newNotes, setNewNotes] = useState('')
+
+  const loadSchedule = () => supabase.from('stream_schedule').select('*').order('scheduled_at', { ascending: true }).then(({ data }) => setSchedule(data || []))
 
   useEffect(() => {
     supabase.from('settings').select('*').in('key', ['livestream_embed_url', 'livestream_status']).then(({ data }) => {
@@ -166,6 +172,7 @@ function LivestreamTab() {
         if (row.key === 'livestream_status') setStatus(row.value)
       })
     })
+    loadSchedule()
   }, [])
 
   const save = async () => {
@@ -173,6 +180,13 @@ function LivestreamTab() {
     await supabase.from('settings').upsert({ key: 'livestream_status', value: status }, { onConflict: 'key' })
     setSaved(true); setTimeout(() => setSaved(false), 2000)
   }
+
+  const addScheduled = async () => {
+    if (!newTitle.trim() || !newTime) return
+    await supabase.from('stream_schedule').insert({ title: newTitle.trim(), scheduled_at: new Date(newTime).toISOString(), notes: newNotes.trim() || null })
+    setNewTitle(''); setNewTime(''); setNewNotes(''); loadSchedule()
+  }
+  const delScheduled = async (id: string) => { await supabase.from('stream_schedule').delete().eq('id', id); loadSchedule() }
 
   return (
     <div style={{ maxWidth: 480 }}>
@@ -189,6 +203,28 @@ function LivestreamTab() {
       </div>
       <button style={btn(C.navy)} onClick={save}>Save</button>
       {saved && <span style={{ color: '#9ae6b4', marginLeft: 12, fontSize: 13 }}>Saved ✓</span>}
+
+      <div style={{ marginTop: 30, paddingTop: 20, borderTop: `1px solid ${C.cardBorder}` }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 12 }}>Scheduled streams</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+          <input style={inp} placeholder="Title (e.g. Weekly Briefing)" value={newTitle} onChange={e => setNewTitle(e.target.value)} />
+          <input style={inp} type="datetime-local" value={newTime} onChange={e => setNewTime(e.target.value)} />
+          <input style={inp} placeholder="Notes (optional)" value={newNotes} onChange={e => setNewNotes(e.target.value)} />
+          <button style={btn(C.green)} onClick={addScheduled}>+ Add scheduled stream</button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {schedule.map(s => (
+            <div key={s.id} style={{ background: C.card, border: `1px solid ${C.cardBorder}`, borderRadius: 6, padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{s.title}</div>
+                <div style={{ fontSize: 11, color: C.muted }}>{new Date(s.scheduled_at).toLocaleString()}</div>
+              </div>
+              <button style={btn(C.red)} onClick={() => delScheduled(s.id)}>Delete</button>
+            </div>
+          ))}
+          {schedule.length === 0 && <div style={{ color: C.muted, fontSize: 12 }}>No scheduled streams.</div>}
+        </div>
+      </div>
     </div>
   )
 }

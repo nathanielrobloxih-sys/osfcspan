@@ -1,10 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
 export const Route = createFileRoute('/admin')({ component: AdminPanel })
 
-type Tab = 'posts' | 'livestream' | 'applications' | 'settings'
+type Tab = 'posts' | 'livestream' | 'careers' | 'applications' | 'settings'
 
 const C = {
   navy: '#123a7a', navyDark: '#0b2f6b', red: '#c53030',
@@ -64,14 +64,17 @@ function LoginScreen({ onAuthed }: { onAuthed: (role: string) => void }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: C.navyDark, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
-      <div style={{ width: 340, background: C.card, border: `1px solid ${C.cardBorder}`, borderRadius: 10, padding: 28 }}>
+    <div style={{ minHeight: '100vh', background: `linear-gradient(135deg, ${C.navyDark} 0%, #14275a 55%, #1c1030 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+      <div style={{ width: 340, background: 'rgba(13,26,45,0.85)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', border: `1px solid ${C.cardBorder}`, borderRadius: 12, padding: 28, boxShadow: '0 12px 40px rgba(0,0,0,0.35)' }}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.muted, marginBottom: 4, textAlign: 'center' }}>OSFUSA</div>
         <div style={{ fontSize: 20, fontWeight: 700, color: '#fff', textAlign: 'center', marginBottom: 20 }}>C-SPAN Admin</div>
         <input style={{ ...inp, marginBottom: 10 }} placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
         <input style={{ ...inp, marginBottom: 14 }} placeholder="Password" type="password" value={pw} onChange={e => setPw(e.target.value)} onKeyDown={e => e.key === 'Enter' && login()} />
         {error && <div style={{ color: C.redText, fontSize: 12, marginBottom: 12 }}>{error}</div>}
         <button style={{ ...btn(C.navy), width: '100%' }} onClick={login} disabled={loading}>{loading ? 'Checking...' : 'Log In'}</button>
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <Link to="/" style={{ fontSize: 12, color: C.muted, textDecoration: 'none' }}>← Back to site</Link>
+        </div>
       </div>
     </div>
   )
@@ -273,6 +276,44 @@ function ApplicationsTab() {
   )
 }
 
+/* ─── Careers tab ───────────────────────────────────────────────── */
+function CareersTab() {
+  const [text, setText] = useState('')
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    supabase.from('settings').select('*').eq('key', 'open_positions').single().then(({ data }) => setText(data?.value || ''))
+  }, [])
+
+  const save = async () => {
+    await supabase.from('settings').upsert({ key: 'open_positions', value: text }, { onConflict: 'key' })
+    setSaved(true); setTimeout(() => setSaved(false), 2000)
+  }
+
+  return (
+    <div style={{ maxWidth: 560 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Open positions</div>
+      <div style={{ fontSize: 12, color: C.muted, marginBottom: 10, lineHeight: 1.6 }}>
+        One position per line, formatted as: <code>Title | short description</code><br />
+        Example: <code>Anchor / Host | Deliver live coverage and interviews</code>
+      </div>
+      <textarea style={{ ...inp, minHeight: 160, resize: 'vertical' }} value={text} onChange={e => setText(e.target.value)}
+        placeholder={'Anchor / Host | Deliver live coverage and interviews\nCorrespondent | Field reporting on domestic stories'} />
+      <div style={{ marginTop: 10 }}>
+        <button style={btn(C.navy)} onClick={save}>Save</button>
+        {saved && <span style={{ color: '#9ae6b4', marginLeft: 12, fontSize: 13 }}>Saved ✓</span>}
+      </div>
+
+      <div style={{ marginTop: 30, paddingTop: 20, borderTop: `1px solid ${C.cardBorder}` }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 10 }}>Applications</div>
+        <div style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>
+          Review and update submitted applications in the Applications tab above.
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Settings tab ──────────────────────────────────────────────── */
 function SettingsTab() {
   const [settings, setSettings] = useState<Record<string, string>>({})
@@ -313,7 +354,7 @@ function SettingsTab() {
       <div style={{ background: '#1a2740', border: `1px solid ${C.cardBorder}`, borderRadius: 6, padding: 12, fontSize: 12, color: C.muted, marginBottom: 14 }}>
         The Discord webhook URL (for website → Discord posting) and bot service-role key
         (for Discord → website posting) live outside this panel as environment
-        variables — see the Discord bot README for setup.
+        variables - see the Discord bot README for setup.
       </div>
       <button style={btn(C.navy)} onClick={save}>Save</button>
       {saved && <span style={{ color: '#9ae6b4', marginLeft: 12, fontSize: 13 }}>Saved ✓</span>}
@@ -331,24 +372,29 @@ function AdminPanel() {
   const TABS: { id: Tab; label: string }[] = [
     { id: 'posts', label: 'Posts' },
     { id: 'livestream', label: 'Live Stream' },
+    { id: 'careers', label: 'Careers' },
     { id: 'applications', label: 'Applications' },
     { id: 'settings', label: 'Settings' },
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: C.navyDark, fontFamily: 'sans-serif' }}>
-      <header style={{ background: C.card, borderBottom: `1px solid ${C.cardBorder}`, padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ color: '#fff', fontWeight: 700 }}>C-SPAN Admin</div>
+    <div style={{ minHeight: '100vh', background: `linear-gradient(160deg, ${C.navyDark} 0%, #14275a 50%, #1c1030 100%)`, fontFamily: 'sans-serif' }}>
+      <header style={{ background: 'rgba(13,26,45,0.75)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', borderBottom: `1px solid ${C.cardBorder}`, padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ color: '#fff', fontWeight: 700 }}>C-SPAN Admin</div>
+          <Link to="/" style={{ fontSize: 12, color: C.muted, textDecoration: 'none' }}>← Back to site</Link>
+        </div>
         <button style={btn('#333')} onClick={() => { sessionStorage.removeItem('cspan-admin'); setAuthed(false) }}>Log Out</button>
       </header>
-      <div style={{ display: 'flex', gap: 8, padding: '16px 24px 0' }}>
+      <div style={{ display: 'flex', gap: 8, padding: '16px 24px 0', flexWrap: 'wrap' }}>
         {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{ ...btn(tab === t.id ? C.navy : '#1a2740'), padding: '8px 16px' }}>{t.label}</button>
+          <button key={t.id} onClick={() => setTab(t.id)} style={{ ...btn(tab === t.id ? C.navy : 'rgba(255,255,255,0.06)'), padding: '8px 16px', border: tab === t.id ? 'none' : `1px solid ${C.cardBorder}` }}>{t.label}</button>
         ))}
       </div>
       <main style={{ padding: 24 }}>
         {tab === 'posts' && <PostsTab />}
         {tab === 'livestream' && <LivestreamTab />}
+        {tab === 'careers' && <CareersTab />}
         {tab === 'applications' && <ApplicationsTab />}
         {tab === 'settings' && <SettingsTab />}
       </main>

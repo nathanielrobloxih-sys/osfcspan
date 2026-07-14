@@ -43,7 +43,7 @@ function TickerBar() {
   }, [])
   return (
     <div style={{ background: C.red, color: C.white, fontSize: 12, fontWeight: 600, letterSpacing: 0.5, textAlign: 'center', padding: '6px 12px' }}>
-      {live ? 'LIVE NOW — tap Live Stream to watch' : 'OSFUSA Cable-Satellite Public Affairs Network'}
+      {live ? 'LIVE NOW - tap Live Stream to watch' : 'OSFUSA Cable-Satellite Public Affairs Network'}
     </div>
   )
 }
@@ -93,13 +93,16 @@ function SiteFooter() {
   }, [])
   return (
     <footer style={{ background: C.navyDark, color: '#d7e0f2', padding: '28px 24px', marginTop: 60, textAlign: 'center', fontSize: 12 }}>
-      <div>OSFUSA C-SPAN — Cable-Satellite Public Affairs Network</div>
+      <div>OSFUSA C-SPAN - Cable-Satellite Public Affairs Network</div>
       <div style={{ marginTop: 6, opacity: 0.7 }}>Roleplay news network. Not affiliated with the real C-SPAN.</div>
       {settings.discord_invite && (
         <div style={{ marginTop: 10 }}>
           <a href={settings.discord_invite} target="_blank" style={{ color: C.white }}>Join the C-SPAN Discord</a>
         </div>
       )}
+      <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.12)' }}>
+        <Link to="/admin" style={{ color: 'rgba(215,224,242,0.6)', fontSize: 11, textDecoration: 'none' }}>Staff Login</Link>
+      </div>
     </footer>
   )
 }
@@ -229,7 +232,7 @@ function HomeTab({ setTab }: { setTab: (t: TabId) => void }) {
         }}>
           <div style={{ fontSize: 11, letterSpacing: 2, color: 'rgba(215,224,242,0.85)', marginBottom: 8 }}>OSFUSA CABLE-SATELLITE PUBLIC AFFAIRS NETWORK</div>
           <div style={{ fontSize: 30, fontWeight: 700, fontFamily: 'Georgia, serif', marginBottom: 10, color: C.white }}>Coverage you can trust</div>
-          <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', marginBottom: 20 }}>Breaking news, foreign affairs, and official newsletters — plus live coverage.</div>
+          <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', marginBottom: 20 }}>Breaking news, foreign affairs, and official newsletters - plus live coverage.</div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <button onClick={() => setTab('breaking')} style={{ background: C.red, color: C.white, border: 'none', borderRadius: 20, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', boxShadow: '0 2px 10px rgba(197,48,48,0.35)' }}>Breaking News</button>
             <button onClick={() => setTab('livestream')} style={{ background: 'rgba(255,255,255,0.12)', color: C.white, border: `1px solid rgba(255,255,255,0.35)`, borderRadius: 20, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Watch Live</button>

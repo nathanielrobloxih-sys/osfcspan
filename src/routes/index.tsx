@@ -49,6 +49,65 @@ function TickerBar() {
   )
 }
 
+function PersonIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+    </svg>
+  )
+}
+
+function SearchIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="11" cy="11" r="7" />
+      <path d="M21 21l-4.3-4.3" />
+    </svg>
+  )
+}
+
+function HeaderSearch({ setTab }: { setTab: (t: TabId) => void }) {
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<Post[]>([])
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (!query.trim()) { setResults([]); return }
+    const t = setTimeout(() => {
+      supabase.from('posts').select('*').ilike('title', `%${query}%`).limit(5).then(({ data }) => setResults(data || []))
+    }, 250)
+    return () => clearTimeout(t)
+  }, [query])
+
+  return (
+    <div style={{ position: 'relative', flex: '1 1 180px', maxWidth: 220 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.lightGray, border: `1px solid ${C.border}`, borderRadius: 20, padding: '6px 12px' }}>
+        <span style={{ color: C.gray }}><SearchIcon /></span>
+        <input
+          value={query}
+          onChange={e => { setQuery(e.target.value); setOpen(true) }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          placeholder="Search C-SPAN"
+          style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: 12, color: C.text, width: '100%' }}
+        />
+      </div>
+      {open && results.length > 0 && (
+        <div style={{ position: 'absolute', top: '110%', left: 0, right: 0, background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, boxShadow: '0 6px 20px rgba(18,58,122,0.15)', overflow: 'hidden', zIndex: 20 }}>
+          {results.map(r => (
+            <button key={r.id} onMouseDown={() => { setTab(r.category as TabId); setQuery(''); setOpen(false) }}
+              style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: '10px 14px', cursor: 'pointer', borderBottom: `1px solid ${C.lightGray}` }}>
+              <div style={{ fontSize: 10, color: C.gray, textTransform: 'uppercase' }}>{r.category}</div>
+              <div style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>{r.title}</div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Header({ tab, setTab }: { tab: TabId; setTab: (t: TabId) => void }) {
   return (
     <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
@@ -56,21 +115,31 @@ function Header({ tab, setTab }: { tab: TabId; setTab: (t: TabId) => void }) {
       <header style={{ background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', borderBottom: `1px solid ${C.border}`, boxShadow: '0 2px 10px rgba(18,58,122,0.06)' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${C.navy}`, flexShrink: 0 }}>
+            <div style={{ width: 34, height: 34, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${C.navy}`, flexShrink: 0 }}>
               <img src="/cspan-emblem.png" alt="C-SPAN" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none' }} />
             </div>
-            <Link to="/" style={{ fontSize: 19, fontWeight: 700, color: C.navy, fontFamily: 'Georgia, serif', textDecoration: 'none', letterSpacing: 0.3 }}>C-SPAN</Link>
+            <div>
+              <Link to="/" style={{ fontSize: 18, fontWeight: 700, color: C.navy, fontFamily: 'Georgia, serif', textDecoration: 'none', letterSpacing: 0.3, lineHeight: 1 }}>C-SPAN</Link>
+              <div style={{ fontSize: 8, letterSpacing: 1.5, color: C.gray, textTransform: 'uppercase' }}>OSFUSA Roblox RP</div>
+            </div>
           </div>
-          <nav style={{ display: 'flex', gap: 2, flexWrap: 'wrap', flex: 1, justifyContent: 'center' }}>
+          <nav style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
             {TABS.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{
-                background: 'transparent', border: 'none', borderBottom: tab === t.id ? `2px solid ${C.navy}` : '2px solid transparent',
-                color: tab === t.id ? C.navy : C.textMuted, padding: '8px 10px', fontSize: 13, cursor: 'pointer',
-                fontWeight: tab === t.id ? 700 : 500, whiteSpace: 'nowrap',
-              }}>{t.label}</button>
+                background: 'transparent', border: 'none',
+                color: tab === t.id ? C.navy : C.textMuted, padding: '8px 8px', fontSize: 12, cursor: 'pointer',
+                fontWeight: tab === t.id ? 700 : 600, whiteSpace: 'nowrap', letterSpacing: 0.3,
+                textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 3,
+              }}>{t.label} <span style={{ fontSize: 9, opacity: 0.6 }}>▾</span></button>
             ))}
           </nav>
-          <Link to="/apply" style={{ background: C.red, color: C.white, padding: '8px 18px', borderRadius: 4, fontSize: 13, fontWeight: 700, textDecoration: 'none', flexShrink: 0, boxShadow: '0 2px 8px rgba(197,48,48,0.3)' }}>Apply</Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+            <HeaderSearch setTab={setTab} />
+            <Link to="/admin" style={{ display: 'flex', alignItems: 'center', gap: 5, color: C.navy, fontSize: 12, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+              <PersonIcon /> Staff Login
+            </Link>
+            <Link to="/apply" style={{ background: C.red, color: C.white, padding: '8px 16px', borderRadius: 4, fontSize: 12, fontWeight: 700, textDecoration: 'none', boxShadow: '0 2px 8px rgba(197,48,48,0.3)', whiteSpace: 'nowrap' }}>Apply</Link>
+          </div>
         </div>
       </header>
     </div>
@@ -267,11 +336,23 @@ const WHATS_ON_CARDS = [
   { id: 'foreign' as const, label: 'Foreign / Intl', tag: 'DISPATCH' },
 ]
 
+const FALLBACK_HERO_IMG = 'https://commons.wikimedia.org/wiki/Special:FilePath/Capitol_Building_Full_View.jpg?width=1200'
+
+function DomeIcon({ color = 'rgba(255,255,255,0.85)' }: { color?: string }) {
+  return (
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+      <path d="M8 30h24M10 30V20h4v10M26 30V20h4v10M14 20V15h12v5M17 15c0-6 6-6 6 0" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="20" cy="7" r="1.6" fill={color} />
+      <line x1="20" y1="9" x2="20" y2="13" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 function CardThumb({ image_url, accent }: { image_url?: string | null; accent: string }) {
   if (image_url) return <img src={image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
   return (
     <div style={{ width: '100%', height: '100%', background: `linear-gradient(135deg, ${accent}, ${C.navyDark})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: 26, height: 26, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.6)' }} />
+      <DomeIcon />
     </div>
   )
 }
@@ -353,7 +434,7 @@ function HomeTab({ setTab }: { setTab: (t: TabId) => void }) {
     <div style={{ background: `linear-gradient(135deg, #ffffff 0%, #eef2fb 45%, #dbe6f7 100%)`, margin: '-28px -24px 0', padding: '28px 24px 36px' }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
         {/* Featured hero */}
-        <div style={{ display: 'grid', gridTemplateColumns: featured?.image_url ? '1fr 1fr' : '1fr', gap: 28, alignItems: 'center', marginBottom: 34 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'center', marginBottom: 34 }}>
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, color: accent, letterSpacing: 2, marginBottom: 8 }}>{featured ? 'FEATURED' : 'OSFUSA CABLE-SATELLITE PUBLIC AFFAIRS NETWORK'}</div>
             <div style={{ fontSize: 34, fontWeight: 700, color: C.navyDark, fontFamily: 'Georgia, serif', lineHeight: 1.15, marginBottom: 14 }}>
@@ -371,15 +452,13 @@ function HomeTab({ setTab }: { setTab: (t: TabId) => void }) {
               </button>
             </div>
           </div>
-          {featured?.image_url && (
-            <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', height: 260, boxShadow: '0 8px 30px rgba(18,58,122,0.18)' }}>
-              <img src={featured.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(11,47,107,0.85))', padding: '30px 18px 14px' }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#fff', letterSpacing: 1, textTransform: 'uppercase', opacity: 0.85 }}>{featured.category}</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>{featured.title}</div>
-              </div>
+          <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', height: 260, boxShadow: '0 8px 30px rgba(18,58,122,0.18)' }}>
+            <img src={featured?.image_url || FALLBACK_HERO_IMG} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(11,47,107,0.85))', padding: '30px 18px 14px' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#fff', letterSpacing: 1, textTransform: 'uppercase', opacity: 0.85 }}>{featured ? featured.category : 'OSFUSA'}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>{featured ? featured.title : 'C-SPAN Network'}</div>
             </div>
-          )}
+          </div>
         </div>
 
         {/* What's on */}

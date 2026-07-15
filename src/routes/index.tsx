@@ -113,32 +113,32 @@ function Header({ tab, setTab }: { tab: TabId; setTab: (t: TabId) => void }) {
     <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
       <TickerBar />
       <header style={{ background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', borderBottom: `1px solid ${C.border}`, boxShadow: '0 2px 10px rgba(18,58,122,0.06)' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            <div style={{ width: 34, height: 34, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${C.navy}`, flexShrink: 0 }}>
+        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '18px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${C.navy}`, flexShrink: 0 }}>
               <img src="/cspan-emblem.png" alt="C-SPAN" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none' }} />
             </div>
             <div>
-              <Link to="/" style={{ fontSize: 18, fontWeight: 700, color: C.navy, fontFamily: 'Georgia, serif', textDecoration: 'none', letterSpacing: 0.3, lineHeight: 1 }}>C-SPAN</Link>
-              <div style={{ fontSize: 8, letterSpacing: 1.5, color: C.gray, textTransform: 'uppercase' }}>OSFUSA Roblox RP</div>
+              <Link to="/" style={{ fontSize: 24, fontWeight: 700, color: C.navy, fontFamily: 'Georgia, serif', textDecoration: 'none', letterSpacing: 0.3, lineHeight: 1 }}>C-SPAN</Link>
+              <div style={{ fontSize: 9, letterSpacing: 1.5, color: C.gray, textTransform: 'uppercase', marginTop: 2 }}>OSFUSA Roblox RP</div>
             </div>
           </div>
-          <nav style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+          <nav style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
             {TABS.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{
                 background: 'transparent', border: 'none',
-                color: tab === t.id ? C.navy : C.textMuted, padding: '8px 8px', fontSize: 12, cursor: 'pointer',
+                color: tab === t.id ? C.navy : C.textMuted, padding: '10px 10px', fontSize: 14, cursor: 'pointer',
                 fontWeight: tab === t.id ? 700 : 600, whiteSpace: 'nowrap', letterSpacing: 0.3,
-                textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 3,
-              }}>{t.label} <span style={{ fontSize: 9, opacity: 0.6 }}>▾</span></button>
+                textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 4,
+              }}>{t.label} <span style={{ fontSize: 10, opacity: 0.6 }}>▾</span></button>
             ))}
           </nav>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
             <HeaderSearch setTab={setTab} />
-            <Link to="/admin" style={{ display: 'flex', alignItems: 'center', gap: 5, color: C.navy, fontSize: 12, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            <Link to="/admin" style={{ display: 'flex', alignItems: 'center', gap: 6, color: C.navy, fontSize: 13, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
               <PersonIcon /> Staff Login
             </Link>
-            <Link to="/apply" style={{ background: C.red, color: C.white, padding: '8px 16px', borderRadius: 4, fontSize: 12, fontWeight: 700, textDecoration: 'none', boxShadow: '0 2px 8px rgba(197,48,48,0.3)', whiteSpace: 'nowrap' }}>Apply</Link>
+            <Link to="/apply" style={{ background: C.red, color: C.white, padding: '10px 20px', borderRadius: 4, fontSize: 13, fontWeight: 700, textDecoration: 'none', boxShadow: '0 2px 8px rgba(197,48,48,0.3)', whiteSpace: 'nowrap' }}>Apply</Link>
           </div>
         </div>
       </header>
@@ -419,6 +419,72 @@ function RecentRow() {
   )
 }
 
+/* ─── Stat box ──────────────────────────────────────────────────── */
+function StatBox({ label, value, accent, onClick }: { label: string; value: string; accent: string; onClick?: () => void }) {
+  const Tag = onClick ? 'button' : 'div'
+  return (
+    <Tag onClick={onClick} style={{
+      background: C.white, border: `1px solid ${C.border}`, borderTop: `3px solid ${accent}`, borderRadius: 10,
+      padding: '16px 18px', textAlign: 'left', cursor: onClick ? 'pointer' : 'default',
+      boxShadow: '0 2px 10px rgba(18,58,122,0.06)', fontFamily: 'inherit',
+    }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: accent, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: C.darkGray }}>{value}</div>
+    </Tag>
+  )
+}
+
+/* ─── Hero photo carousel ───────────────────────────────────────── */
+function HeroCarousel({ featured }: { featured: Post | null }) {
+  const [slides, setSlides] = useState<{ img: string; category: string; title: string }[]>([])
+  const [idx, setIdx] = useState(0)
+
+  useEffect(() => {
+    supabase.from('posts').select('*').not('image_url', 'is', null).order('created_at', { ascending: false }).limit(5).then(({ data }) => {
+      const withImages = (data || []).filter((p: Post) => p.image_url)
+      if (withImages.length > 0) {
+        setSlides(withImages.map((p: Post) => ({ img: p.image_url!, category: p.category, title: p.title })))
+      } else {
+        setSlides([{ img: FALLBACK_HERO_IMG, category: 'OSFUSA', title: featured ? featured.title : 'C-SPAN Network' }])
+      }
+    })
+  }, [featured])
+
+  useEffect(() => {
+    if (slides.length < 2) return
+    const t = setInterval(() => setIdx(i => (i + 1) % slides.length), 4500)
+    return () => clearInterval(t)
+  }, [slides])
+
+  if (slides.length === 0) return null
+  const slide = slides[idx]
+
+  return (
+    <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', height: 260, boxShadow: '0 8px 30px rgba(18,58,122,0.18)' }}>
+      {slides.map((s, i) => (
+        <img key={i} src={s.img} alt="" style={{
+          position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+          opacity: i === idx ? 1 : 0, transition: 'opacity 0.6s ease',
+        }} />
+      ))}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(11,47,107,0.85))', padding: '30px 18px 14px' }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#fff', letterSpacing: 1, textTransform: 'uppercase', opacity: 0.85 }}>{slide.category}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>{slide.title}</div>
+      </div>
+      {slides.length > 1 && (
+        <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', gap: 6 }}>
+          {slides.map((_, i) => (
+            <button key={i} onClick={() => setIdx(i)} style={{
+              width: 8, height: 8, borderRadius: '50%', border: 'none', cursor: 'pointer', padding: 0,
+              background: i === idx ? '#fff' : 'rgba(255,255,255,0.45)',
+            }} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function HomeTab({ setTab }: { setTab: (t: TabId) => void }) {
   const [featured, setFeatured] = useState<Post | null>(null)
   const [live, setLive] = useState(false)
@@ -432,33 +498,37 @@ function HomeTab({ setTab }: { setTab: (t: TabId) => void }) {
 
   return (
     <div style={{ background: `linear-gradient(135deg, #ffffff 0%, #eef2fb 45%, #dbe6f7 100%)`, margin: '-28px -24px 0', padding: '28px 24px 36px' }}>
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         {/* Featured hero */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'center', marginBottom: 34 }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: accent, letterSpacing: 2, marginBottom: 8 }}>{featured ? 'FEATURED' : 'OSFUSA CABLE-SATELLITE PUBLIC AFFAIRS NETWORK'}</div>
-            <div style={{ fontSize: 34, fontWeight: 700, color: C.navyDark, fontFamily: 'Georgia, serif', lineHeight: 1.15, marginBottom: 14 }}>
-              {featured ? featured.title : 'Coverage you can trust'}
+        <div style={{ background: C.white, borderRadius: 16, padding: 24, boxShadow: '0 6px 24px rgba(18,58,122,0.10)', border: `1px solid ${C.border}`, marginBottom: 30 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'center' }}>
+            <div>
+              <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#fff', letterSpacing: 1.5, marginBottom: 12, background: accent, borderRadius: 20, padding: '4px 12px' }}>{featured ? 'FEATURED' : 'OSFUSA NETWORK'}</div>
+              <div style={{ fontSize: 32, fontWeight: 700, color: C.navyDark, fontFamily: 'Georgia, serif', lineHeight: 1.15, marginBottom: 14 }}>
+                {featured ? featured.title : 'Coverage you can trust'}
+              </div>
+              <div style={{ fontSize: 14, color: C.textMuted, lineHeight: 1.6, marginBottom: 20 }}>
+                {featured ? featured.body.slice(0, 140) + (featured.body.length > 140 ? '...' : '') : 'Breaking news, foreign affairs, and official newsletters - plus live coverage.'}
+              </div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                <button onClick={() => setTab('livestream')} style={{ display: 'flex', alignItems: 'center', gap: 8, background: C.navy, color: C.white, border: 'none', borderRadius: 6, padding: '11px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                  <span style={{ width: 0, height: 0, borderTop: '5px solid transparent', borderBottom: '5px solid transparent', borderLeft: '8px solid #fff' }} /> {live ? 'Watch Live' : 'Live Stream'}
+                </button>
+                <button onClick={() => setTab(featured ? (featured.category as TabId) : 'breaking')} style={{ background: 'transparent', border: 'none', color: C.navy, fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  View all →
+                </button>
+              </div>
             </div>
-            <div style={{ fontSize: 14, color: C.textMuted, lineHeight: 1.6, marginBottom: 20 }}>
-              {featured ? featured.body.slice(0, 140) + (featured.body.length > 140 ? '...' : '') : 'Breaking news, foreign affairs, and official newsletters - plus live coverage.'}
-            </div>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-              <button onClick={() => setTab('livestream')} style={{ display: 'flex', alignItems: 'center', gap: 8, background: C.navy, color: C.white, border: 'none', borderRadius: 6, padding: '11px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-                <span style={{ width: 0, height: 0, borderTop: '5px solid transparent', borderBottom: '5px solid transparent', borderLeft: '8px solid #fff' }} /> {live ? 'Watch Live' : 'Live Stream'}
-              </button>
-              <button onClick={() => setTab(featured ? (featured.category as TabId) : 'breaking')} style={{ background: 'transparent', border: 'none', color: C.navy, fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-                View all →
-              </button>
-            </div>
+            <HeroCarousel featured={featured} />
           </div>
-          <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', height: 260, boxShadow: '0 8px 30px rgba(18,58,122,0.18)' }}>
-            <img src={featured?.image_url || FALLBACK_HERO_IMG} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(11,47,107,0.85))', padding: '30px 18px 14px' }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#fff', letterSpacing: 1, textTransform: 'uppercase', opacity: 0.85 }}>{featured ? featured.category : 'OSFUSA'}</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>{featured ? featured.title : 'C-SPAN Network'}</div>
-            </div>
-          </div>
+        </div>
+
+        {/* Quick stat boxes */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14, marginBottom: 30 }}>
+          <StatBox label="Status" value={live ? 'Live Now' : 'Offline'} accent={live ? C.red : C.gray} />
+          <StatBox label="Newsletters" value="Latest updates" accent={C.navy} onClick={() => setTab('newsletter')} />
+          <StatBox label="Breaking" value="Top stories" accent={C.red} onClick={() => setTab('breaking')} />
+          <StatBox label="Careers" value="Open positions" accent={C.green} onClick={() => setTab('careers')} />
         </div>
 
         {/* What's on */}
@@ -521,7 +591,7 @@ function CSPANHome() {
     <div style={{ minHeight: '100vh', background: C.offWhite, fontFamily: 'system-ui, sans-serif' }}>
       <UpcomingStreamPopup />
       <Header tab={tab} setTab={setTab} />
-      <main style={{ maxWidth: 900, margin: '0 auto', padding: '28px 24px' }}>
+      <main style={{ maxWidth: 1000, margin: '0 auto', padding: '28px 24px' }}>
         {tab === 'home' && <HomeTab setTab={setTab} />}
         {tab === 'newsletter' && <PostFeed category="newsletter" accent={C.navy} />}
         {tab === 'breaking' && <PostFeed category="breaking" accent={C.red} />}

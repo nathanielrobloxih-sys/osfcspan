@@ -42,9 +42,18 @@ function TickerBar() {
   useEffect(() => {
     supabase.from('settings').select('*').eq('key', 'livestream_status').single().then(({ data }) => setLive(data?.value === 'live'))
   }, [])
+  const text = live ? '● LIVE NOW - tap Live Stream to watch' : 'OSFUSA Cable-Satellite Public Affairs Network'
   return (
-    <div style={{ background: C.red, color: C.white, fontSize: 12, fontWeight: 600, letterSpacing: 0.5, textAlign: 'center', padding: '6px 12px' }}>
-      {live ? 'LIVE NOW - tap Live Stream to watch' : 'OSFUSA Cable-Satellite Public Affairs Network'}
+    <div style={{ position: 'relative', overflow: 'hidden', height: 30, background: `linear-gradient(90deg, ${C.navyDark}, ${C.red}, ${C.navyDark})` }}>
+      <style>{`@keyframes cspanMarquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }`}</style>
+      <div style={{
+        position: 'absolute', top: 0, left: 0, height: '100%', display: 'flex', alignItems: 'center',
+        whiteSpace: 'nowrap', animation: 'cspanMarquee 18s linear infinite', color: C.white,
+        fontSize: 12, fontWeight: 700, letterSpacing: 0.6, gap: 40, paddingRight: 40,
+      }}>
+        <span>{text}</span><span style={{ marginLeft: 40 }}>{text}</span><span style={{ marginLeft: 40 }}>{text}</span>
+        <span style={{ marginLeft: 40 }}>{text}</span><span style={{ marginLeft: 40 }}>{text}</span><span style={{ marginLeft: 40 }}>{text}</span>
+      </div>
     </div>
   )
 }
@@ -82,15 +91,15 @@ function HeaderSearch({ setTab }: { setTab: (t: TabId) => void }) {
 
   return (
     <div style={{ position: 'relative', flex: '1 1 180px', maxWidth: 220 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.lightGray, border: `1px solid ${C.border}`, borderRadius: 20, padding: '6px 12px' }}>
-        <span style={{ color: C.gray }}><SearchIcon /></span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 20, padding: '8px 14px' }}>
+        <span style={{ color: 'rgba(255,255,255,0.75)' }}><SearchIcon /></span>
         <input
           value={query}
           onChange={e => { setQuery(e.target.value); setOpen(true) }}
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           placeholder="Search C-SPAN"
-          style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: 12, color: C.text, width: '100%' }}
+          style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: 13, color: C.white, width: '100%' }}
         />
       </div>
       {open && results.length > 0 && (
@@ -112,33 +121,33 @@ function Header({ tab, setTab }: { tab: TabId; setTab: (t: TabId) => void }) {
   return (
     <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
       <TickerBar />
-      <header style={{ background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', borderBottom: `1px solid ${C.border}`, boxShadow: '0 2px 10px rgba(18,58,122,0.06)' }}>
-        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '18px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-            <div style={{ width: 48, height: 48, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${C.navy}`, flexShrink: 0 }}>
+      <header style={{ background: `linear-gradient(120deg, ${C.navyDark} 0%, ${C.navy} 55%, ${C.navyLight} 100%)`, boxShadow: '0 4px 20px rgba(11,47,107,0.25)' }}>
+        <div style={{ maxWidth: 1220, margin: '0 auto', padding: '22px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+            <div style={{ width: 60, height: 60, borderRadius: '50%', overflow: 'hidden', border: `3px solid rgba(255,255,255,0.85)`, flexShrink: 0, boxShadow: '0 3px 12px rgba(0,0,0,0.3)' }}>
               <img src="/cspan-emblem.png" alt="C-SPAN" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none' }} />
             </div>
             <div>
-              <Link to="/" style={{ fontSize: 24, fontWeight: 700, color: C.navy, fontFamily: 'Georgia, serif', textDecoration: 'none', letterSpacing: 0.3, lineHeight: 1 }}>C-SPAN</Link>
-              <div style={{ fontSize: 9, letterSpacing: 1.5, color: C.gray, textTransform: 'uppercase', marginTop: 2 }}>OSFUSA Roblox RP</div>
+              <Link to="/" style={{ fontSize: 30, fontWeight: 700, color: C.white, fontFamily: 'Georgia, serif', textDecoration: 'none', letterSpacing: 0.3, lineHeight: 1 }}>C-SPAN</Link>
+              <div style={{ fontSize: 10, letterSpacing: 2, color: 'rgba(215,224,242,0.8)', textTransform: 'uppercase', marginTop: 4 }}>OSFUSA Roblox RP</div>
             </div>
           </div>
-          <nav style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          <nav style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             {TABS.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{
-                background: 'transparent', border: 'none',
-                color: tab === t.id ? C.navy : C.textMuted, padding: '10px 10px', fontSize: 14, cursor: 'pointer',
+                background: tab === t.id ? 'rgba(255,255,255,0.18)' : 'transparent', border: 'none', borderRadius: 8,
+                color: C.white, padding: '10px 12px', fontSize: 15, cursor: 'pointer',
                 fontWeight: tab === t.id ? 700 : 600, whiteSpace: 'nowrap', letterSpacing: 0.3,
                 textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 4,
-              }}>{t.label} <span style={{ fontSize: 10, opacity: 0.6 }}>▾</span></button>
+              }}>{t.label} <span style={{ fontSize: 11, opacity: 0.7 }}>▾</span></button>
             ))}
           </nav>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexShrink: 0 }}>
             <HeaderSearch setTab={setTab} />
-            <Link to="/admin" style={{ display: 'flex', alignItems: 'center', gap: 6, color: C.navy, fontSize: 13, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            <Link to="/admin" style={{ display: 'flex', alignItems: 'center', gap: 6, color: C.white, fontSize: 14, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
               <PersonIcon /> Staff Login
             </Link>
-            <Link to="/apply" style={{ background: C.red, color: C.white, padding: '10px 20px', borderRadius: 4, fontSize: 13, fontWeight: 700, textDecoration: 'none', boxShadow: '0 2px 8px rgba(197,48,48,0.3)', whiteSpace: 'nowrap' }}>Apply</Link>
+            <Link to="/apply" style={{ background: C.red, color: C.white, padding: '12px 24px', borderRadius: 6, fontSize: 14, fontWeight: 700, textDecoration: 'none', boxShadow: '0 3px 12px rgba(197,48,48,0.4)', whiteSpace: 'nowrap' }}>Apply</Link>
           </div>
         </div>
       </header>

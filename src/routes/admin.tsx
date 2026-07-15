@@ -67,6 +67,7 @@ function LoginScreen({ onAuthed }: { onAuthed: (role: string) => void }) {
     <div style={{ minHeight: '100vh', background: `linear-gradient(135deg, ${C.navyDark} 0%, #14275a 55%, #1c1030 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
       <div style={{ width: 340, background: 'rgba(13,26,45,0.85)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', border: `1px solid ${C.cardBorder}`, borderRadius: 12, padding: 28, boxShadow: '0 12px 40px rgba(0,0,0,0.35)' }}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.muted, marginBottom: 4, textAlign: 'center' }}>OSFUSA</div>
+        <img src="/cspan-outline-logo.png" alt="" style={{ width: 90, margin: '0 auto 10px', display: 'block', opacity: 0.8 }} />
         <div style={{ fontSize: 20, fontWeight: 700, color: '#fff', textAlign: 'center', marginBottom: 20 }}>C-SPAN Admin</div>
         <input style={{ ...inp, marginBottom: 10 }} placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
         <input style={{ ...inp, marginBottom: 14 }} placeholder="Password" type="password" value={pw} onChange={e => setPw(e.target.value)} onKeyDown={e => e.key === 'Enter' && login()} />

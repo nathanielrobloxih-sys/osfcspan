@@ -241,8 +241,8 @@ function LiveStreamTab() {
           <iframe src={url} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }} allow="autoplay; fullscreen" allowFullScreen />
         </div>
       ) : (
-        <div style={{ padding: 60, textAlign: 'center', color: C.gray, background: C.white, border: `1px solid ${C.border}`, borderRadius: 10 }}>
-          No stream configured yet. Check back soon.
+        <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 10, overflow: 'hidden', boxShadow: '0 4px 20px rgba(18,58,122,0.15)' }}>
+          <img src="/cspan-streaming-shortly.png" alt="Streaming shortly" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
       )}
 
@@ -314,17 +314,22 @@ function CareersTab() {
 /* ─── About tab ─────────────────────────────────────────────────── */
 function AboutTab() {
   return (
-    <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, padding: 28 }}>
-      <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 22, color: C.navy, marginBottom: 12 }}>About C-SPAN</h2>
-      <p style={{ fontSize: 14, color: C.textMuted, lineHeight: 1.7, marginBottom: 12 }}>
-        OSFUSA C-SPAN (Cable-Satellite Public Affairs Network) is the in-universe press and
-        broadcast arm of OSFUSA, covering breaking news, foreign affairs, and official
-        newsletters, alongside a live video stream of ongoing coverage.
-      </p>
-      <p style={{ fontSize: 14, color: C.textMuted, lineHeight: 1.7 }}>
-        Interested in joining the network as an anchor, correspondent, or production crew?
-        Head to the Apply tab to submit an application.
-      </p>
+    <div>
+      <div style={{ borderRadius: 12, overflow: 'hidden', marginBottom: 20, boxShadow: '0 6px 24px rgba(18,58,122,0.15)' }}>
+        <img src="/cspan-collage-banner.png" alt="C-SPAN" style={{ width: '100%', display: 'block' }} />
+      </div>
+      <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, padding: 28 }}>
+        <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 22, color: C.navy, marginBottom: 12 }}>About C-SPAN</h2>
+        <p style={{ fontSize: 14, color: C.textMuted, lineHeight: 1.7, marginBottom: 12 }}>
+          OSFUSA C-SPAN (Cable-Satellite Public Affairs Network) is the in-universe press and
+          broadcast arm of OSFUSA, covering breaking news, foreign affairs, and official
+          newsletters, alongside a live video stream of ongoing coverage.
+        </p>
+        <p style={{ fontSize: 14, color: C.textMuted, lineHeight: 1.7 }}>
+          Interested in joining the network as an anchor, correspondent, or production crew?
+          Head to the Apply tab to submit an application.
+        </p>
+      </div>
     </div>
   )
 }
@@ -336,7 +341,7 @@ const WHATS_ON_CARDS = [
   { id: 'foreign' as const, label: 'Foreign / Intl', tag: 'DISPATCH' },
 ]
 
-const FALLBACK_HERO_IMG = 'https://commons.wikimedia.org/wiki/Special:FilePath/Capitol_Building_Full_View.jpg?width=1200'
+const FALLBACK_HERO_IMG = '/cspan-hero-tagline.png'
 
 function DomeIcon({ color = 'rgba(255,255,255,0.85)' }: { color?: string }) {
   return (

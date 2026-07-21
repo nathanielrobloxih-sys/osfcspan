@@ -119,7 +119,9 @@ function PostsTab() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div style={{ display: 'flex', gap: 8 }}>
           {(['all', 'newsletter', 'breaking', 'foreign'] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)} style={{ ...btn(filter === f ? C.navy : '#1a2740'), padding: '6px 14px' }}>{f}</button>
+            <button key={f} onClick={() => setFilter(f)} style={{ ...btn(filter === f ? C.navy : '#1a2740'), padding: '6px 14px' }}>
+              {f === 'foreign' ? 'Washington This Week' : f}
+            </button>
           ))}
         </div>
         <button style={btn(C.green)} onClick={() => setEditing({ ...blank })}>+ New Post</button>
@@ -131,7 +133,7 @@ function PostsTab() {
             <select style={inp} value={editing.category} onChange={e => setEditing({ ...editing, category: e.target.value })}>
               <option value="breaking">Breaking News</option>
               <option value="newsletter">Newsletter</option>
-              <option value="foreign">Foreign / Intl</option>
+              <option value="foreign">Washington This Week</option>
             </select>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, color: C.text, fontSize: 13 }}>
               <input type="checkbox" checked={editing.pinned} onChange={e => setEditing({ ...editing, pinned: e.target.checked })} /> Pinned

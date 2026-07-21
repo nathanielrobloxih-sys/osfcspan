@@ -4,7 +4,17 @@ import { supabase } from '../lib/supabase'
 
 export const Route = createFileRoute('/admin')({ component: AdminPanel })
 
-type Tab = 'posts' | 'livestream' | 'careers' | 'applications' | 'settings'
+type Tab = 'posts' | 'livestream' | 'careers' | 'applications' | 'settings' | 'roles' | 'staff'
+
+const ALL_TABS: { id: Tab; label: string; ownerOnly?: boolean }[] = [
+  { id: 'posts', label: 'Posts' },
+  { id: 'livestream', label: 'Live Stream' },
+  { id: 'careers', label: 'Careers' },
+  { id: 'applications', label: 'Applications' },
+  { id: 'settings', label: 'Settings' },
+  { id: 'roles', label: 'Roles', ownerOnly: true },
+  { id: 'staff', label: 'Staff', ownerOnly: true },
+]
 
 const C = {
   navy: '#123a7a', navyDark: '#0b2f6b', red: '#c53030',
@@ -363,32 +373,194 @@ function SettingsTab() {
   )
 }
 
+/* ─── Roles tab (Owner only) ────────────────────────────────────── */
+const PERMISSION_TABS = ALL_TABS.filter(t => !t.ownerOnly)
+
+function RolesTab() {
+  const [roles, setRoles] = useState<any[]>([])
+  const [newName, setNewName] = useState('')
+  const [newPerms, setNewPerms] = useState<string[]>([])
+
+  const load = () => supabase.from('admin_roles').select('*').order('name').then(({ data }) => setRoles(data || []))
+  useEffect(load, [])
+
+  const togglePerm = (perms: string[], id: string, set: (p: string[]) => void) => {
+    set(perms.includes(id) ? perms.filter(p => p !== id) : [...perms, id])
+  }
+
+  const createRole = async () => {
+    if (!newName.trim()) return
+    await supabase.from('admin_roles').insert({ name: newName.trim(), permissions: newPerms })
+    setNewName(''); setNewPerms([]); load()
+  }
+
+  const updateRolePerms = async (role: any, perms: string[]) => {
+    await supabase.from('admin_roles').update({ permissions: perms }).eq('id', role.id)
+    load()
+  }
+
+  const deleteRole = async (id: string) => {
+    if (confirm('Delete this role? Staff logins using it will lose admin access until reassigned.')) {
+      await supabase.from('admin_roles').delete().eq('id', id); load()
+    }
+  }
+
+  return (
+    <div style={{ maxWidth: 560 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 10 }}>Create a new role</div>
+      <input style={{ ...inp, marginBottom: 10 }} placeholder="Role name (e.g. Anchor, Producer)" value={newName} onChange={e => setNewName(e.target.value)} />
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+        {PERMISSION_TABS.map(t => (
+          <label key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: newPerms.includes(t.id) ? C.navy : '#1a2740', border: `1px solid ${C.cardBorder}`, borderRadius: 6, padding: '6px 12px', fontSize: 12, color: '#fff', cursor: 'pointer' }}>
+            <input type="checkbox" checked={newPerms.includes(t.id)} onChange={() => togglePerm(newPerms, t.id, setNewPerms)} /> {t.label}
+          </label>
+        ))}
+      </div>
+      <button style={btn(C.green)} onClick={createRole}>+ Create role</button>
+
+      <div style={{ marginTop: 30, paddingTop: 20, borderTop: `1px solid ${C.cardBorder}` }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 12 }}>Existing roles</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {roles.map(r => (
+            <div key={r.id} style={{ background: C.card, border: `1px solid ${C.cardBorder}`, borderRadius: 8, padding: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{r.name}</div>
+                <button style={btn(C.red)} onClick={() => deleteRole(r.id)}>Delete</button>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {PERMISSION_TABS.map(t => (
+                  <label key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: (r.permissions || []).includes(t.id) ? C.navy : '#1a2740', border: `1px solid ${C.cardBorder}`, borderRadius: 6, padding: '5px 10px', fontSize: 11, color: '#fff', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={(r.permissions || []).includes(t.id)} onChange={() => updateRolePerms(r, togglePermArr(r.permissions || [], t.id))} /> {t.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+          {roles.length === 0 && <div style={{ color: C.muted, fontSize: 12 }}>No custom roles yet. Owner always has full access.</div>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function togglePermArr(perms: string[], id: string) {
+  return perms.includes(id) ? perms.filter(p => p !== id) : [...perms, id]
+}
+
+/* ─── Staff tab (Owner only) ────────────────────────────────────── */
+function StaffTab() {
+  const [users, setUsers] = useState<any[]>([])
+  const [roles, setRoles] = useState<any[]>([])
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [role, setRole] = useState('')
+  const [error, setError] = useState('')
+  const [saved, setSaved] = useState(false)
+
+  const load = () => {
+    supabase.from('admin_users').select('id, email, role').then(({ data }) => setUsers(data || []))
+    supabase.from('admin_roles').select('*').order('name').then(({ data }) => setRoles(data || []))
+  }
+  useEffect(load, [])
+
+  const createStaff = async () => {
+    setError('')
+    if (!username.trim() || !password.trim() || !role) { setError('Fill in username, password, and role.'); return }
+    const existing = users.find(u => u.email.toLowerCase() === username.trim().toLowerCase())
+    if (existing) { setError('That username already exists.'); return }
+    const hash = await hashPassword(password)
+    const { error: dbErr } = await supabase.from('admin_users').insert({ email: username.trim(), password_hash: hash, role })
+    if (dbErr) { setError(dbErr.message); return }
+    setUsername(''); setPassword(''); setRole(''); setSaved(true); setTimeout(() => setSaved(false), 2000); load()
+  }
+
+  const deleteStaff = async (id: string, email: string) => {
+    if (email === 'Greysphoric') { alert("Can't delete the primary owner account."); return }
+    if (confirm(`Remove login for ${email}?`)) { await supabase.from('admin_users').delete().eq('id', id); load() }
+  }
+
+  return (
+    <div style={{ maxWidth: 480 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 10 }}>Create a staff login</div>
+      <input style={{ ...inp, marginBottom: 10 }} placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
+      <input style={{ ...inp, marginBottom: 10 }} placeholder="Password" type="text" value={password} onChange={e => setPassword(e.target.value)} />
+      <select style={{ ...inp, marginBottom: 10 }} value={role} onChange={e => setRole(e.target.value)}>
+        <option value="">Select a role...</option>
+        <option value="Owner">Owner (full access)</option>
+        {roles.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
+      </select>
+      {error && <div style={{ color: C.redText, fontSize: 12, marginBottom: 10 }}>{error}</div>}
+      <button style={btn(C.green)} onClick={createStaff}>+ Create login</button>
+      {saved && <span style={{ color: '#9ae6b4', marginLeft: 12, fontSize: 13 }}>Created ✓</span>}
+      {roles.length === 0 && <div style={{ color: C.muted, fontSize: 12, marginTop: 10 }}>Tip: create a role first in the Roles tab so you have something other than "Owner" to assign.</div>}
+
+      <div style={{ marginTop: 30, paddingTop: 20, borderTop: `1px solid ${C.cardBorder}` }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 12 }}>Existing logins</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {users.map(u => (
+            <div key={u.id} style={{ background: C.card, border: `1px solid ${C.cardBorder}`, borderRadius: 6, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{u.email}</div>
+                <div style={{ fontSize: 11, color: C.muted }}>{u.role}</div>
+              </div>
+              <button style={btn(C.red)} onClick={() => deleteStaff(u.id, u.email)}>Remove</button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Panel ─────────────────────────────────────────────────────── */
 function AdminPanel() {
   const [authed, setAuthed] = useState(() => sessionStorage.getItem('cspan-admin') === 'true')
-  const [tab, setTab] = useState<Tab>('posts')
+  const [role, setRole] = useState(() => sessionStorage.getItem('cspan-admin-role') || 'Owner')
+  const [permTabs, setPermTabs] = useState<Tab[] | null>(role === 'Owner' ? null : [])
+  const [tab, setTab] = useState<Tab | null>(null)
 
-  if (!authed) return <LoginScreen onAuthed={() => setAuthed(true)} />
+  useEffect(() => {
+    if (!authed) return
+    if (role === 'Owner') { setPermTabs(null); return }
+    supabase.from('admin_roles').select('*').eq('name', role).single().then(({ data }) => {
+      setPermTabs((data?.permissions || []) as Tab[])
+    })
+  }, [authed, role])
 
-  const TABS: { id: Tab; label: string }[] = [
-    { id: 'posts', label: 'Posts' },
-    { id: 'livestream', label: 'Live Stream' },
-    { id: 'careers', label: 'Careers' },
-    { id: 'applications', label: 'Applications' },
-    { id: 'settings', label: 'Settings' },
-  ]
+  const visibleTabs = role === 'Owner' ? ALL_TABS : ALL_TABS.filter(t => !t.ownerOnly && permTabs?.includes(t.id))
+
+  useEffect(() => {
+    if (tab === null && visibleTabs.length > 0) setTab(visibleTabs[0].id)
+  }, [visibleTabs, tab])
+
+  if (!authed) return <LoginScreen onAuthed={r => { setRole(r); setAuthed(true) }} />
+
+  if (permTabs === null && role !== 'Owner') {
+    return <div style={{ minHeight: '100vh', background: C.navyDark, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>
+  }
+
+  if (visibleTabs.length === 0) {
+    return (
+      <div style={{ minHeight: '100vh', background: C.navyDark, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12, textAlign: 'center', padding: 24 }}>
+        <div>Your role ({role}) doesn't have access to any admin sections yet.</div>
+        <div style={{ fontSize: 13, color: C.muted }}>Ask an Owner to grant permissions in the Roles tab.</div>
+        <Link to="/" style={{ color: '#9ae6b4', fontSize: 13, marginTop: 8 }}>← Back to site</Link>
+      </div>
+    )
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: `linear-gradient(160deg, ${C.navyDark} 0%, #14275a 50%, #1c1030 100%)`, fontFamily: 'sans-serif' }}>
       <header style={{ background: 'rgba(13,26,45,0.75)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', borderBottom: `1px solid ${C.cardBorder}`, padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ color: '#fff', fontWeight: 700 }}>C-SPAN Admin</div>
+          <div style={{ fontSize: 11, color: C.muted, background: '#1a2740', border: `1px solid ${C.cardBorder}`, borderRadius: 20, padding: '2px 10px' }}>{role}</div>
           <Link to="/" style={{ fontSize: 12, color: C.muted, textDecoration: 'none' }}>← Back to site</Link>
         </div>
-        <button style={btn('#333')} onClick={() => { sessionStorage.removeItem('cspan-admin'); setAuthed(false) }}>Log Out</button>
+        <button style={btn('#333')} onClick={() => { sessionStorage.removeItem('cspan-admin'); sessionStorage.removeItem('cspan-admin-role'); setAuthed(false); setTab(null) }}>Log Out</button>
       </header>
       <div style={{ display: 'flex', gap: 8, padding: '16px 24px 0', flexWrap: 'wrap' }}>
-        {TABS.map(t => (
+        {visibleTabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{ ...btn(tab === t.id ? C.navy : 'rgba(255,255,255,0.06)'), padding: '8px 16px', border: tab === t.id ? 'none' : `1px solid ${C.cardBorder}` }}>{t.label}</button>
         ))}
       </div>
@@ -398,6 +570,8 @@ function AdminPanel() {
         {tab === 'careers' && <CareersTab />}
         {tab === 'applications' && <ApplicationsTab />}
         {tab === 'settings' && <SettingsTab />}
+        {tab === 'roles' && <RolesTab />}
+        {tab === 'staff' && <StaffTab />}
       </main>
     </div>
   )

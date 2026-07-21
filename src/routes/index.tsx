@@ -8,7 +8,7 @@ const TABS = [
   { id: 'home',        label: 'Home' },
   { id: 'newsletter',  label: 'Newsletters' },
   { id: 'breaking',    label: 'Breaking News' },
-  { id: 'foreign',     label: 'Foreign / Intl' },
+  { id: 'foreign',     label: 'Washington This Week' },
   { id: 'livestream',  label: 'Live Stream' },
   { id: 'careers',     label: 'Careers' },
   { id: 'about',       label: 'About' },
@@ -347,7 +347,7 @@ function AboutTab() {
 const WHATS_ON_CARDS = [
   { id: 'newsletter' as const, label: 'Newsletters', tag: 'BULLETIN' },
   { id: 'breaking' as const, label: 'Breaking News', tag: 'ALERT' },
-  { id: 'foreign' as const, label: 'Foreign / Intl', tag: 'DISPATCH' },
+  { id: 'foreign' as const, label: 'Washington This Week', tag: 'PODCAST' },
 ]
 
 const FALLBACK_HERO_IMG = '/cspan-hero-tagline.png'
@@ -377,7 +377,7 @@ function WhatsOnCard({ label, tag, setTab }: { label: string; tag: string; id: T
     supabase.from('posts').select('*').eq('category', label === 'Newsletters' ? 'newsletter' : label === 'Breaking News' ? 'breaking' : 'foreign')
       .order('created_at', { ascending: false }).limit(1).then(({ data }) => setLatest(data?.[0] || null))
   }, [])
-  const accent = label === 'Breaking News' ? C.red : label === 'Foreign / Intl' ? C.green : C.navy
+  const accent = label === 'Breaking News' ? C.red : label === 'Washington This Week' ? C.green : C.navy
   const tabId: TabId = label === 'Newsletters' ? 'newsletter' : label === 'Breaking News' ? 'breaking' : 'foreign'
   return (
     <button onClick={() => setTab(tabId)} style={{ textAlign: 'left', background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: '0 3px 12px rgba(18,58,122,0.07)' }}>

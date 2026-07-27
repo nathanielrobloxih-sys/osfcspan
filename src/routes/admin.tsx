@@ -33,44 +33,25 @@ const btn = (bg: string): React.CSSProperties => ({
   fontSize: 13, fontWeight: 600, cursor: 'pointer',
 })
 
-async function hashPassword(password: string): Promise<string> {
-  const buf = new TextEncoder().encode(password)
-  const hashBuf = await crypto.subtle.digest('SHA-256', buf)
-  return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('')
-}
-
 /* ─── Login ─────────────────────────────────────────────────────── */
 function LoginScreen({ onAuthed }: { onAuthed: (role: string) => void }) {
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [pw, setPw] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const login = async () => {
-    if (!username || !pw) { setError('Please enter username and password.'); return }
-    const lockedUntil = Number(sessionStorage.getItem('cspan-admin-locked-until') || 0)
-    if (Date.now() < lockedUntil) {
-      setError('Too many failed attempts. Try again in ' + Math.ceil((lockedUntil - Date.now()) / 1000) + 's.'); return
-    }
+    if (!email || !pw) { setError('Please enter your username/email and password.'); return }
     setLoading(true); setError('')
-    const hash = await hashPassword(pw)
-    const { data } = await supabase.from('admin_users').select('*').eq('email', username).eq('password_hash', hash).single()
-    setLoading(false)
-    if (data) {
-      sessionStorage.removeItem('cspan-admin-attempts')
-      sessionStorage.setItem('cspan-admin', 'true')
-      sessionStorage.setItem('cspan-admin-role', data.role)
-      onAuthed(data.role)
-    } else {
-      const attempts = Number(sessionStorage.getItem('cspan-admin-attempts') || 0) + 1
-      sessionStorage.setItem('cspan-admin-attempts', String(attempts))
-      if (attempts >= 5) {
-        sessionStorage.setItem('cspan-admin-locked-until', String(Date.now() + 5 * 60 * 1000))
-        setError('Too many failed attempts. Locked for 5 minutes.')
-      } else {
-        setError(`Incorrect username or password. (${5 - attempts} attempts remaining)`)
-      }
+    const { data, error: authErr } = await supabase.auth.signInWithPassword({ email, password: pw })
+    if (authErr || !data.session) {
+      setLoading(false)
+      setError('Incorrect username or password.')
+      return
     }
+    const { data: profile } = await supabase.from('staff_profiles').select('role').eq('id', data.session.user.id).single()
+    setLoading(false)
+    onAuthed(profile?.role || 'Owner')
   }
 
   return (
@@ -79,7 +60,7 @@ function LoginScreen({ onAuthed }: { onAuthed: (role: string) => void }) {
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.muted, marginBottom: 4, textAlign: 'center' }}>OSFUSA</div>
         <img src="/cspan-outline-logo.png" alt="" style={{ width: 90, margin: '0 auto 10px', display: 'block', opacity: 0.8 }} />
         <div style={{ fontSize: 20, fontWeight: 700, color: '#fff', textAlign: 'center', marginBottom: 20 }}>C-SPAN Admin</div>
-        <input style={{ ...inp, marginBottom: 10 }} placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
+        <input style={{ ...inp, marginBottom: 10 }} placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
         <input style={{ ...inp, marginBottom: 14 }} placeholder="Password" type="password" value={pw} onChange={e => setPw(e.target.value)} onKeyDown={e => e.key === 'Enter' && login()} />
         {error && <div style={{ color: C.redText, fontSize: 12, marginBottom: 12 }}>{error}</div>}
         <button style={{ ...btn(C.navy), width: '100%' }} onClick={login} disabled={loading}>{loading ? 'Checking...' : 'Log In'}</button>
@@ -248,7 +229,7 @@ function LivestreamTab() {
 /* ─── Applications tab ──────────────────────────────────────────── */
 function ApplicationsTab() {
   const [apps, setApps] = useState<any[]>([])
-  const load = () => supabase.from('applications').select('*').order('submitted_at', { ascending: false }).then(({ data }) => setApps(data || []))
+  const load = () => { supabase.from('applications').select('*').order('submitted_at', { ascending: false }).then(({ data }) => setApps(data || [])) }
   useEffect(load, [])
 
   const updateStatus = async (id: string, status: string) => {
@@ -383,7 +364,7 @@ function RolesTab() {
   const [newName, setNewName] = useState('')
   const [newPerms, setNewPerms] = useState<string[]>([])
 
-  const load = () => supabase.from('admin_roles').select('*').order('name').then(({ data }) => setRoles(data || []))
+  const load = () => { supabase.from('admin_roles').select('*').order('name').then(({ data }) => setRoles(data || [])) }
   useEffect(load, [])
 
   const togglePerm = (perms: string[], id: string, set: (p: string[]) => void) => {
@@ -453,46 +434,71 @@ function togglePermArr(perms: string[], id: string) {
 function StaffTab() {
   const [users, setUsers] = useState<any[]>([])
   const [roles, setRoles] = useState<any[]>([])
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState('')
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
+  const [busy, setBusy] = useState(false)
 
   const load = () => {
-    supabase.from('admin_users').select('id, email, role').then(({ data }) => setUsers(data || []))
+    supabase.from('staff_profiles').select('id, email, role').then(({ data }) => setUsers(data || []))
     supabase.from('admin_roles').select('*').order('name').then(({ data }) => setRoles(data || []))
   }
   useEffect(load, [])
 
+  const getToken = async () => {
+    const { data } = await supabase.auth.getSession()
+    return data.session?.access_token
+  }
+
   const createStaff = async () => {
     setError('')
-    if (!username.trim() || !password.trim() || !role) { setError('Fill in username, password, and role.'); return }
-    const existing = users.find(u => u.email.toLowerCase() === username.trim().toLowerCase())
-    if (existing) { setError('That username already exists.'); return }
-    const hash = await hashPassword(password)
-    const { error: dbErr } = await supabase.from('admin_users').insert({ email: username.trim(), password_hash: hash, role })
-    if (dbErr) { setError(dbErr.message); return }
-    setUsername(''); setPassword(''); setRole(''); setSaved(true); setTimeout(() => setSaved(false), 2000); load()
+    if (!email.trim() || !password.trim() || !role) { setError('Fill in email, password, and role.'); return }
+    if (password.length < 8) { setError('Password should be at least 8 characters.'); return }
+    const token = await getToken()
+    if (!token) { setError('Your session expired - please log out and back in.'); return }
+    setBusy(true)
+    const res = await fetch('/.netlify/functions/create-staff', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), password, role, callerToken: token }),
+    })
+    setBusy(false)
+    if (!res.ok) { setError(await res.text()); return }
+    setEmail(''); setPassword(''); setRole(''); setSaved(true); setTimeout(() => setSaved(false), 2000); load()
   }
 
   const deleteStaff = async (id: string, email: string) => {
-    if (email === 'Greysphoric') { alert("Can't delete the primary owner account."); return }
-    if (confirm(`Remove login for ${email}?`)) { await supabase.from('admin_users').delete().eq('id', id); load() }
+    if (!confirm(`Remove login for ${email}?`)) return
+    const token = await getToken()
+    if (!token) { alert('Your session expired - please log out and back in.'); return }
+    setBusy(true)
+    const res = await fetch('/.netlify/functions/delete-staff', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: id, callerToken: token }),
+    })
+    setBusy(false)
+    if (!res.ok) { alert(await res.text()); return }
+    load()
   }
 
   return (
     <div style={{ maxWidth: 480 }}>
       <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 10 }}>Create a staff login</div>
-      <input style={{ ...inp, marginBottom: 10 }} placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
-      <input style={{ ...inp, marginBottom: 10 }} placeholder="Password" type="text" value={password} onChange={e => setPassword(e.target.value)} />
+      <div style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>
+        Use a real-looking email (it doesn't need to receive mail, e.g. <code>anchor1@osfcspan.local</code>).
+      </div>
+      <input style={{ ...inp, marginBottom: 10 }} placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+      <input style={{ ...inp, marginBottom: 10 }} placeholder="Password (min 8 characters)" type="text" value={password} onChange={e => setPassword(e.target.value)} />
       <select style={{ ...inp, marginBottom: 10 }} value={role} onChange={e => setRole(e.target.value)}>
         <option value="">Select a role...</option>
         <option value="Owner">Owner (full access)</option>
         {roles.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
       </select>
       {error && <div style={{ color: C.redText, fontSize: 12, marginBottom: 10 }}>{error}</div>}
-      <button style={btn(C.green)} onClick={createStaff}>+ Create login</button>
+      <button style={btn(C.green)} onClick={createStaff} disabled={busy}>{busy ? 'Working...' : '+ Create login'}</button>
       {saved && <span style={{ color: '#9ae6b4', marginLeft: 12, fontSize: 13 }}>Created ✓</span>}
       {roles.length === 0 && <div style={{ color: C.muted, fontSize: 12, marginTop: 10 }}>Tip: create a role first in the Roles tab so you have something other than "Owner" to assign.</div>}
 
@@ -505,7 +511,7 @@ function StaffTab() {
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{u.email}</div>
                 <div style={{ fontSize: 11, color: C.muted }}>{u.role}</div>
               </div>
-              <button style={btn(C.red)} onClick={() => deleteStaff(u.id, u.email)}>Remove</button>
+              <button style={btn(C.red)} onClick={() => deleteStaff(u.id, u.email)} disabled={busy}>Remove</button>
             </div>
           ))}
         </div>
@@ -516,10 +522,26 @@ function StaffTab() {
 
 /* ─── Panel ─────────────────────────────────────────────────────── */
 function AdminPanel() {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem('cspan-admin') === 'true')
-  const [role, setRole] = useState(() => sessionStorage.getItem('cspan-admin-role') || 'Owner')
-  const [permTabs, setPermTabs] = useState<Tab[] | null>(role === 'Owner' ? null : [])
+  const [checking, setChecking] = useState(true)
+  const [authed, setAuthed] = useState(false)
+  const [role, setRole] = useState('Owner')
+  const [permTabs, setPermTabs] = useState<Tab[] | null>(null)
   const [tab, setTab] = useState<Tab | null>(null)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (data.session) {
+        const { data: profile } = await supabase.from('staff_profiles').select('role').eq('id', data.session.user.id).single()
+        setRole(profile?.role || 'Owner')
+        setAuthed(true)
+      }
+      setChecking(false)
+    })
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) { setAuthed(false); setTab(null) }
+    })
+    return () => sub.subscription.unsubscribe()
+  }, [])
 
   useEffect(() => {
     if (!authed) return
@@ -535,9 +557,11 @@ function AdminPanel() {
     if (tab === null && visibleTabs.length > 0) setTab(visibleTabs[0].id)
   }, [visibleTabs, tab])
 
+  if (checking) return <div style={{ minHeight: '100vh', background: C.navyDark, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>
+
   if (!authed) return <LoginScreen onAuthed={r => { setRole(r); setAuthed(true) }} />
 
-  if (permTabs === null && role !== 'Owner') {
+  if (role !== 'Owner' && permTabs === null) {
     return <div style={{ minHeight: '100vh', background: C.navyDark, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>
   }
 
@@ -559,7 +583,7 @@ function AdminPanel() {
           <div style={{ fontSize: 11, color: C.muted, background: '#1a2740', border: `1px solid ${C.cardBorder}`, borderRadius: 20, padding: '2px 10px' }}>{role}</div>
           <Link to="/" style={{ fontSize: 12, color: C.muted, textDecoration: 'none' }}>← Back to site</Link>
         </div>
-        <button style={btn('#333')} onClick={() => { sessionStorage.removeItem('cspan-admin'); sessionStorage.removeItem('cspan-admin-role'); setAuthed(false); setTab(null) }}>Log Out</button>
+        <button style={btn('#333')} onClick={async () => { await supabase.auth.signOut(); setAuthed(false); setTab(null) }}>Log Out</button>
       </header>
       <div style={{ display: 'flex', gap: 8, padding: '16px 24px 0', flexWrap: 'wrap' }}>
         {visibleTabs.map(t => (

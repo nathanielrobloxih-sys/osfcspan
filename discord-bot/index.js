@@ -21,6 +21,10 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
+console.log('DEBUG - SUPABASE_URL value is:', JSON.stringify(SUPABASE_URL))
+console.log('DEBUG - SUPABASE_URL length:', SUPABASE_URL ? SUPABASE_URL.length : 'undefined')
+console.log('DEBUG - SUPABASE_SERVICE_ROLE_KEY is set:', !!SUPABASE_SERVICE_ROLE_KEY)
+
 const CATEGORY_COLOR = { breaking: 0xc53030, foreign: 0x276749, newsletter: 0x123a7a }
 const CATEGORY_LABEL = { breaking: 'Breaking News', foreign: 'Washington This Week', newsletter: 'Newsletter' }
 

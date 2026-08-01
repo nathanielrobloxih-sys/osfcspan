@@ -1,8 +1,3 @@
-// OSFUSA C-SPAN Discord bot
-// /post -> private preview (only the author sees it) -> Accept sends it to
-// the mod channel for approval, Decline cancels it before it ever reaches mods.
-// A moderator (must have MOD_ROLE_ID) then clicks Approve or Deny.
-// Approving sets the post live on the website; Denying discards it.
 
 const {
   Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes, EmbedBuilder,
@@ -24,6 +19,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 console.log('DEBUG - SUPABASE_URL value is:', JSON.stringify(SUPABASE_URL))
 console.log('DEBUG - SUPABASE_URL length:', SUPABASE_URL ? SUPABASE_URL.length : 'undefined')
 console.log('DEBUG - SUPABASE_SERVICE_ROLE_KEY is set:', !!SUPABASE_SERVICE_ROLE_KEY)
+console.log('DEBUG - MOD_CHANNEL_ID value is:', JSON.stringify(MOD_CHANNEL_ID))
 
 const CATEGORY_COLOR = { breaking: 0xc53030, foreign: 0x276749, newsletter: 0x123a7a }
 const CATEGORY_LABEL = { breaking: 'Breaking News', foreign: 'Washington This Week', newsletter: 'Newsletter' }

@@ -84,7 +84,7 @@ function HeaderSearch({ setTab }: { setTab: (t: TabId) => void }) {
   useEffect(() => {
     if (!query.trim()) { setResults([]); return }
     const t = setTimeout(() => {
-      supabase.from('posts').select('*').ilike('title', `%${query}%`).limit(5).then(({ data }) => setResults(data || []))
+      supabase.from('posts').select('*').eq('status', 'approved').ilike('title', `%${query}%`).limit(5).then(({ data }) => setResults(data || []))
     }, 250)
     return () => clearTimeout(t)
   }, [query])
@@ -188,7 +188,7 @@ function PostFeed({ category, accent }: { category: Post['category']; accent: st
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.from('posts').select('*').eq('category', category)
+    supabase.from('posts').select('*').eq('category', category).eq('status', 'approved')
       .order('pinned', { ascending: false }).order('created_at', { ascending: false })
       .then(({ data }) => { setPosts(data || []); setLoading(false) })
   }, [category])
@@ -374,7 +374,7 @@ function CardThumb({ image_url, accent }: { image_url?: string | null; accent: s
 function WhatsOnCard({ label, tag, setTab }: { label: string; tag: string; id: TabId; setTab: (t: TabId) => void }) {
   const [latest, setLatest] = useState<Post | null>(null)
   useEffect(() => {
-    supabase.from('posts').select('*').eq('category', label === 'Newsletters' ? 'newsletter' : label === 'Breaking News' ? 'breaking' : 'foreign')
+    supabase.from('posts').select('*').eq('category', label === 'Newsletters' ? 'newsletter' : label === 'Breaking News' ? 'breaking' : 'foreign').eq('status', 'approved')
       .order('created_at', { ascending: false }).limit(1).then(({ data }) => setLatest(data?.[0] || null))
   }, [])
   const accent = label === 'Breaking News' ? C.red : label === 'Washington This Week' ? C.green : C.navy
@@ -411,7 +411,7 @@ function LiveStreamCard({ setTab }: { setTab: (t: TabId) => void }) {
 function RecentRow() {
   const [posts, setPosts] = useState<Post[]>([])
   useEffect(() => {
-    supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(6).then(({ data }) => setPosts(data || []))
+    supabase.from('posts').select('*').eq('status', 'approved').order('created_at', { ascending: false }).limit(6).then(({ data }) => setPosts(data || []))
   }, [])
   if (posts.length === 0) return null
   const accentFor = (cat: string) => cat === 'breaking' ? C.red : cat === 'foreign' ? C.green : C.navy
@@ -454,7 +454,7 @@ function HeroCarousel({ featured }: { featured: Post | null }) {
   const [idx, setIdx] = useState(0)
 
   useEffect(() => {
-    supabase.from('posts').select('*').not('image_url', 'is', null).order('created_at', { ascending: false }).limit(5).then(({ data }) => {
+    supabase.from('posts').select('*').eq('status', 'approved').not('image_url', 'is', null).order('created_at', { ascending: false }).limit(5).then(({ data }) => {
       const withImages = (data || []).filter((p: Post) => p.image_url)
       if (withImages.length > 0) {
         setSlides(withImages.map((p: Post) => ({ img: p.image_url!, category: p.category, title: p.title })))
@@ -504,7 +504,7 @@ function HomeTab({ setTab }: { setTab: (t: TabId) => void }) {
   const [live, setLive] = useState(false)
 
   useEffect(() => {
-    supabase.from('posts').select('*').order('pinned', { ascending: false }).order('created_at', { ascending: false }).limit(1).then(({ data }) => setFeatured(data?.[0] || null))
+    supabase.from('posts').select('*').eq('status', 'approved').order('pinned', { ascending: false }).order('created_at', { ascending: false }).limit(1).then(({ data }) => setFeatured(data?.[0] || null))
     supabase.from('settings').select('*').eq('key', 'livestream_status').single().then(({ data }) => setLive(data?.value === 'live'))
   }, [])
 

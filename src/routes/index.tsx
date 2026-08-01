@@ -1,8 +1,18 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
-export const Route = createFileRoute('/')({ component: CSPANHome })
+const TAB_IDS = ['home', 'newsletter', 'breaking', 'foreign', 'livestream', 'careers', 'about'] as const
+
+export const Route = createFileRoute('/')({
+  validateSearch: (search: Record<string, unknown>): { tab: TabId } => {
+    const tab = typeof search.tab === 'string' && (TAB_IDS as readonly string[]).includes(search.tab)
+      ? (search.tab as TabId)
+      : 'home'
+    return { tab }
+  },
+  component: CSPANHome,
+})
 
 const TABS = [
   { id: 'home',        label: 'Home' },
@@ -80,6 +90,7 @@ function HeaderSearch({ setTab }: { setTab: (t: TabId) => void }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Post[]>([])
   const [open, setOpen] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (!query.trim()) { setResults([]); return }
@@ -105,7 +116,7 @@ function HeaderSearch({ setTab }: { setTab: (t: TabId) => void }) {
       {open && results.length > 0 && (
         <div style={{ position: 'absolute', top: '110%', left: 0, right: 0, background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, boxShadow: '0 6px 20px rgba(18,58,122,0.15)', overflow: 'hidden', zIndex: 20 }}>
           {results.map(r => (
-            <button key={r.id} onMouseDown={() => { setTab(r.category as TabId); setQuery(''); setOpen(false) }}
+            <button key={r.id} onMouseDown={() => { navigate({ to: '/story/$id', params: { id: r.id } }); setQuery(''); setOpen(false) }}
               style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: '10px 14px', cursor: 'pointer', borderBottom: `1px solid ${C.lightGray}` }}>
               <div style={{ fontSize: 10, color: C.gray, textTransform: 'uppercase' }}>{r.category}</div>
               <div style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>{r.title}</div>
@@ -212,7 +223,9 @@ function PostFeed({ category, accent }: { category: Post['category']; accent: st
             <span style={{ fontSize: 11, color: C.gray }}>{new Date(p.created_at).toLocaleString()}</span>
             {p.source === 'discord' && <span style={{ fontSize: 10, color: C.gray, border: `1px solid ${C.border}`, borderRadius: 20, padding: '2px 9px' }}>via Discord</span>}
           </div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 8, marginLeft: 6, fontFamily: 'Georgia, serif' }}>{p.title}</div>
+          <Link to="/story/$id" params={{ id: p.id }} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 8, marginLeft: 6, fontFamily: 'Georgia, serif' }}>{p.title}</div>
+          </Link>
           {p.image_url && <img src={p.image_url} alt="" style={{ width: '100%', borderRadius: 8, marginBottom: 10, marginLeft: 0 }} />}
           <div style={{ fontSize: 14, color: C.textMuted, lineHeight: 1.65, whiteSpace: 'pre-wrap', marginLeft: 6 }}>{p.body}</div>
         </div>
@@ -379,15 +392,19 @@ function WhatsOnCard({ label, tag, setTab }: { label: string; tag: string; id: T
   }, [])
   const accent = label === 'Breaking News' ? C.red : label === 'Washington This Week' ? C.green : C.navy
   const tabId: TabId = label === 'Newsletters' ? 'newsletter' : label === 'Breaking News' ? 'breaking' : 'foreign'
-  return (
-    <button onClick={() => setTab(tabId)} style={{ textAlign: 'left', background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: '0 3px 12px rgba(18,58,122,0.07)' }}>
+  const cardContent = (
+    <>
       <div style={{ fontSize: 12, fontWeight: 700, color: accent, letterSpacing: 1.2 }}>{tag}</div>
       <div style={{ fontSize: 18, fontWeight: 700, color: C.darkGray, lineHeight: 1.3, minHeight: 48 }}>{latest ? latest.title : label}</div>
       <div style={{ width: '100%', height: 140, borderRadius: 8, overflow: 'hidden' }}><CardThumb image_url={latest?.image_url} accent={accent} /></div>
       <div style={{ fontSize: 13, color: accent, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>{latest ? new Date(latest.created_at).toLocaleDateString() : 'No posts yet'}</div>
-    </button>
+    </>
   )
-}
+  const cardStyle = { textAlign: 'left' as const, background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, cursor: 'pointer', display: 'flex', flexDirection: 'column' as const, gap: 14, boxShadow: '0 3px 12px rgba(18,58,122,0.07)', textDecoration: 'none' }
+  if (latest) {
+    return <Link to="/story/$id" params={{ id: latest.id }} style={cardStyle}>{cardContent}</Link>
+  }
+  return <button onClick={() => setTab(tabId)} style={cardStyle}>{cardContent}</button>
 
 function LiveStreamCard({ setTab }: { setTab: (t: TabId) => void }) {
   const [live, setLive] = useState(false)
@@ -420,13 +437,13 @@ function RecentRow() {
       <h3 style={{ fontSize: 13, fontWeight: 700, color: C.darkGray, marginBottom: 14, textTransform: 'uppercase', letterSpacing: 1 }}>Recently posted</h3>
       <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 6 }}>
         {posts.map(p => (
-          <div key={p.id} style={{ minWidth: 200, maxWidth: 200, flexShrink: 0 }}>
+          <Link key={p.id} to="/story/$id" params={{ id: p.id }} style={{ minWidth: 200, maxWidth: 200, flexShrink: 0, textDecoration: 'none', color: 'inherit', display: 'block' }}>
             <div style={{ position: 'relative', width: '100%', height: 110, borderRadius: 8, overflow: 'hidden', marginBottom: 8, boxShadow: '0 2px 8px rgba(18,58,122,0.08)' }}>
               <CardThumb image_url={p.image_url} accent={accentFor(p.category)} />
               <div style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(0,0,0,0.55)', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 20, textTransform: 'uppercase' }}>{p.category}</div>
             </div>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.darkGray, lineHeight: 1.35 }}>{p.title}</div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
@@ -450,16 +467,16 @@ function StatBox({ label, value, accent, onClick }: { label: string; value: stri
 
 /* ─── Hero photo carousel ───────────────────────────────────────── */
 function HeroCarousel({ featured }: { featured: Post | null }) {
-  const [slides, setSlides] = useState<{ img: string; category: string; title: string }[]>([])
+  const [slides, setSlides] = useState<{ img: string; category: string; title: string; id?: string }[]>([])
   const [idx, setIdx] = useState(0)
 
   useEffect(() => {
     supabase.from('posts').select('*').eq('status', 'approved').not('image_url', 'is', null).order('created_at', { ascending: false }).limit(5).then(({ data }) => {
       const withImages = (data || []).filter((p: Post) => p.image_url)
       if (withImages.length > 0) {
-        setSlides(withImages.map((p: Post) => ({ img: p.image_url!, category: p.category, title: p.title })))
+        setSlides(withImages.map((p: Post) => ({ img: p.image_url!, category: p.category, title: p.title, id: p.id })))
       } else {
-        setSlides([{ img: FALLBACK_HERO_IMG, category: 'OSFUSA', title: featured ? featured.title : 'C-SPAN Network' }])
+        setSlides([{ img: FALLBACK_HERO_IMG, category: 'OSFUSA', title: featured ? featured.title : 'C-SPAN Network', id: featured?.id }])
       }
     })
   }, [featured])
@@ -483,7 +500,11 @@ function HeroCarousel({ featured }: { featured: Post | null }) {
       ))}
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(11,47,107,0.85))', padding: '30px 18px 14px' }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: '#fff', letterSpacing: 1, textTransform: 'uppercase', opacity: 0.85 }}>{slide.category}</div>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>{slide.title}</div>
+        {slide.id ? (
+          <Link to="/story/$id" params={{ id: slide.id }} style={{ fontSize: 15, fontWeight: 700, color: '#fff', textDecoration: 'none', display: 'block' }}>{slide.title}</Link>
+        ) : (
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>{slide.title}</div>
+        )}
       </div>
       {slides.length > 1 && (
         <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', gap: 6 }}>
@@ -518,9 +539,15 @@ function HomeTab({ setTab }: { setTab: (t: TabId) => void }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'center' }}>
             <div>
               <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#fff', letterSpacing: 1.5, marginBottom: 12, background: accent, borderRadius: 20, padding: '4px 12px' }}>{featured ? 'FEATURED' : 'OSFUSA NETWORK'}</div>
-              <div style={{ fontSize: 32, fontWeight: 700, color: C.navyDark, fontFamily: 'Georgia, serif', lineHeight: 1.15, marginBottom: 14 }}>
-                {featured ? featured.title : 'Coverage you can trust'}
-              </div>
+              {featured ? (
+                <Link to="/story/$id" params={{ id: featured.id }} style={{ display: 'block', textDecoration: 'none', fontSize: 32, fontWeight: 700, color: C.navyDark, fontFamily: 'Georgia, serif', lineHeight: 1.15, marginBottom: 14 }}>
+                  {featured.title}
+                </Link>
+              ) : (
+                <div style={{ fontSize: 32, fontWeight: 700, color: C.navyDark, fontFamily: 'Georgia, serif', lineHeight: 1.15, marginBottom: 14 }}>
+                  Coverage you can trust
+                </div>
+              )}
               <div style={{ fontSize: 14, color: C.textMuted, lineHeight: 1.6, marginBottom: 20 }}>
                 {featured ? featured.body.slice(0, 140) + (featured.body.length > 140 ? '...' : '') : 'Breaking news, foreign affairs, and official newsletters - plus live coverage.'}
               </div>
@@ -589,7 +616,9 @@ function UpcomingStreamPopup() {
 
 /* ─── Page ──────────────────────────────────────────────────────── */
 function CSPANHome() {
-  const [tab, setTab] = useState<TabId>('home')
+  const { tab } = Route.useSearch()
+  const navigate = useNavigate({ from: Route.fullPath })
+  const setTab = (t: TabId) => navigate({ search: { tab: t } })
 
   useEffect(() => {
     if (sessionStorage.getItem('cspan-auto-live-jumped') === 'true') return

@@ -1,3 +1,8 @@
+// OSFUSA C-SPAN Discord bot
+// /post -> private preview (only the author sees it) -> Accept sends it to
+// the mod channel for approval, Decline cancels it before it ever reaches mods.
+// A moderator (must have MOD_ROLE_ID) then clicks Approve or Deny.
+// Approving sets the post live on the website; Denying discards it.
 
 const {
   Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes, EmbedBuilder,
@@ -11,6 +16,7 @@ const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID
 const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID
 const MOD_CHANNEL_ID = process.env.MOD_CHANNEL_ID
 const MOD_ROLE_ID = process.env.MOD_ROLE_ID
+const PUBLISH_CHANNEL_ID = process.env.PUBLISH_CHANNEL_ID
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -123,7 +129,10 @@ client.on('interactionCreate', async interaction => {
     }
 
     try {
+      console.log('DEBUG - attempting to fetch mod channel', MOD_CHANNEL_ID)
       const modChannel = await client.channels.fetch(MOD_CHANNEL_ID)
+      console.log('DEBUG - fetched channel OK, type:', modChannel?.type, 'guild:', modChannel?.guildId)
+      console.log('DEBUG - bot permissions in channel:', modChannel.permissionsFor(client.user)?.toArray())
       const modEmbed = buildEmbed({
         category, title, body, image_url, authorTag,
         statusLine: `Pending review - Submitted by ${authorTag}`,
@@ -132,10 +141,13 @@ client.on('interactionCreate', async interaction => {
         new ButtonBuilder().setCustomId(`approve_${data.id}`).setLabel('Approve').setStyle(ButtonStyle.Success),
         new ButtonBuilder().setCustomId(`deny_${data.id}`).setLabel('Deny').setStyle(ButtonStyle.Danger),
       )
+      console.log('DEBUG - attempting to send to mod channel')
       await modChannel.send({ content: `<@&${MOD_ROLE_ID}> new submission awaiting review`, embeds: [modEmbed], components: [modRow] })
+      console.log('DEBUG - sent OK')
       await interaction.update({ content: 'Submitted for moderator review.', embeds: [], components: [] })
     } catch (err) {
-      console.error('Failed to post to mod channel:', err)
+      console.error('Failed to post to mod channel. Full error:', err)
+      console.error('DEBUG - error code:', err.code, 'status:', err.status)
       await interaction.update({ content: `Saved, but failed to notify mod channel: ${err.message}`, embeds: [], components: [] })
     }
     return
@@ -163,7 +175,24 @@ client.on('interactionCreate', async interaction => {
       statusLine: (newStatus === 'approved' ? 'Approved' : 'Denied') + ' by ' + interaction.user.tag,
     })
 
-    await interaction.update({ embeds: [resultEmbed], components: [] })
+    await interaction.update({
+      content: newStatus === 'approved' ? 'Approved' : 'Denied',
+      embeds: [resultEmbed],
+      components: [],
+    })
+
+    if (newStatus === 'approved' && PUBLISH_CHANNEL_ID) {
+      try {
+        const publishChannel = await client.channels.fetch(PUBLISH_CHANNEL_ID)
+        const publishEmbed = buildEmbed({
+          category: post.category, title: post.title, body: post.body, image_url: post.image_url,
+          statusLine: CATEGORY_LABEL[post.category] || post.category,
+        })
+        await publishChannel.send({ embeds: [publishEmbed] })
+      } catch (err) {
+        console.error('Failed to cross-post approved post:', err)
+      }
+    }
     return
   }
 })

@@ -134,7 +134,11 @@ function PostsTab() {
         {shown.map(p => (
           <div key={p.id} style={{ background: C.card, border: `1px solid ${C.cardBorder}`, borderRadius: 8, padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
             <div>
-              <div style={{ fontSize: 10, color: C.muted, textTransform: 'uppercase', letterSpacing: 1 }}>{p.category} {p.pinned && '· pinned'} {p.source === 'discord' && '· via discord'}</div>
+              <div style={{ fontSize: 10, color: C.muted, textTransform: 'uppercase', letterSpacing: 1 }}>
+                {p.category} {p.pinned && '· pinned'} {p.source === 'discord' && '· via discord'}
+                {p.status === 'pending' && <span style={{ color: '#f6c343', marginLeft: 6 }}>· PENDING</span>}
+                {p.status === 'denied' && <span style={{ color: '#f08080', marginLeft: 6 }}>· DENIED</span>}
+              </div>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', margin: '4px 0' }}>{p.title}</div>
               <div style={{ fontSize: 12, color: C.muted }}>{new Date(p.created_at).toLocaleString()}</div>
             </div>

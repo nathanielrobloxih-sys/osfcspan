@@ -126,18 +126,22 @@ client.on('interactionCreate', async interaction => {
       return
     }
 
-    await interaction.update({ content: 'Submitted for moderator review.', embeds: [], components: [] })
-
-    const modChannel = await client.channels.fetch(MOD_CHANNEL_ID)
-    const modEmbed = buildEmbed({
-      category, title, body, image_url, authorTag,
-      statusLine: `Pending review - Submitted by ${authorTag}`,
-    })
-    const modRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId(`approve_${data.id}`).setLabel('Approve').setStyle(ButtonStyle.Success),
-      new ButtonBuilder().setCustomId(`deny_${data.id}`).setLabel('Deny').setStyle(ButtonStyle.Danger),
-    )
-    await modChannel.send({ content: `<@&${MOD_ROLE_ID}> new submission awaiting review`, embeds: [modEmbed], components: [modRow] })
+    try {
+      const modChannel = await client.channels.fetch(MOD_CHANNEL_ID)
+      const modEmbed = buildEmbed({
+        category, title, body, image_url, authorTag,
+        statusLine: `Pending review - Submitted by ${authorTag}`,
+      })
+      const modRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`approve_${data.id}`).setLabel('Approve').setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId(`deny_${data.id}`).setLabel('Deny').setStyle(ButtonStyle.Danger),
+      )
+      await modChannel.send({ content: `<@&${MOD_ROLE_ID}> new submission awaiting review`, embeds: [modEmbed], components: [modRow] })
+      await interaction.update({ content: 'Submitted for moderator review.', embeds: [], components: [] })
+    } catch (err) {
+      console.error('Failed to post to mod channel:', err)
+      await interaction.update({ content: `Saved, but failed to notify mod channel: ${err.message}`, embeds: [], components: [] })
+    }
     return
   }
 

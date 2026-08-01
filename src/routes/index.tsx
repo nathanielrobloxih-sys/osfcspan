@@ -405,6 +405,7 @@ function WhatsOnCard({ label, tag, setTab }: { label: string; tag: string; id: T
     return <Link to="/story/$id" params={{ id: latest.id }} style={cardStyle}>{cardContent}</Link>
   }
   return <button onClick={() => setTab(tabId)} style={cardStyle}>{cardContent}</button>
+}
 
 function LiveStreamCard({ setTab }: { setTab: (t: TabId) => void }) {
   const [live, setLive] = useState(false)
